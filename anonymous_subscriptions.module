@@ -1,0 +1,399 @@
+<?php
+/**
+ * @file
+ * Anonymous Subscriptions module is used to allow anonymous users to register
+ * for notifications or updates to nodes based on specific content types.
+ *
+ */
+
+define("SUBSCRIPTION_TABLE", "anonymous_subscriptions_emails");
+define("PENDING_EMAIL_TABLE", "anonymous_subscriptions_pending_emails");
+define("MODULE_NAME", "anonymous_subscription");
+
+/**
+ * Implements hook_permission().
+ */
+function anonymous_subscriptions_permission() {
+  return array(
+    'administer subscriptions' => array(
+      'description' => t('Configure the Subscription settings.'),
+      'title' => t('Administer Subscription Settings'),
+    ),
+    'alter subscriptions' => array(
+      'description' => t('Change Subscription settings on node form.'),
+      'title' => t('Change Subscription settings on node form'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function anonymous_subscriptions_menu() {
+  $items = array();
+
+  $items['admin/config/content/anonymous_subscriptions'] = array(
+    'title' => 'Anonymous Subscriptions',
+    'description' => 'Subscription integration settings and configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('anonymous_subscriptions_settings'),
+    'access arguments' => array('administer subscriptions'),
+    'file' => 'anonymous_subscriptions.admin.inc',
+  );
+
+  $items['admin/config/content/anonymous_subscriptions/settings'] = array(
+    'title' => 'Settings',
+    'weight' => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['subscription/%/%/verify'] = array(
+    'page callback' => 'anonymous_subscriptions_verify_email',
+    'page arguments' => array(1, 2),
+    'access arguments' => array('view published content'),
+  );
+
+  $items['subscription/%/%/unsubscribe'] = array(
+    'page callback' => 'anonymous_subscriptions_unsubscribe',
+    'page arguments' => array(1, 2),
+    'access arguments' => array('view published content'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function anonymous_subscriptions_block_info() {
+  $blocks['anon_subscriptions_email_block'] = array(
+    // The name that will appear in the block list.
+    'info' => t('Anonymous Subscription Email Block'),
+    // Default setting.
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function anonymous_subscriptions_block_view($delta = '') {
+  switch ($delta) {
+    case 'anon_subscriptions_email_block':
+      $block['subject'] = t('E-mail:');
+      if (user_access('access content')) {
+        // Retrieve and process data here.
+        $the_form = drupal_get_form('anonymous_subscriptions_form');
+        $block['content'] = drupal_render($the_form);
+
+      }
+
+    return $block;
+  }
+}
+
+/**
+ * Implements hook_form().
+ *
+ * Block used to display form to register for subscription
+ */
+function anonymous_subscriptions_form() {
+  $form['email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email:'),
+    '#default_value' => '',
+    '#required' => TRUE,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  $form['#validate'][] = 'anonymous_subscriptions_form_validate';
+  $form['#submit'][] = 'anonymous_subscriptions_form_submit';
+  return $form;
+}
+
+/**
+ * Implements hook_form_validate().
+ *
+ * Validates the subscription form.
+ */
+function anonymous_subscriptions_form_validate($form, &$form_state) {
+  $email = $form_state['values']['email'];
+  if ($email && !valid_email_address($email)) {
+    form_set_error('email', 'You must enter a valid email address.');
+  } else {
+    $result = db_select(SUBSCRIPTION_TABLE, 's')
+      ->fields('s')
+      ->condition('email', trim($email),'=')
+      ->execute()
+      ->fetchAssoc();
+    if($result) {
+      form_set_error('email', 'You are already subscribed.');
+    }
+  }
+}
+
+/**
+ * Implements hook_form_submit().
+ *
+ * Handles the registration form submission generating a code and
+ * storing that in the database table as well as the default verification
+ * status.
+ */
+function anonymous_subscriptions_form_submit($form, &$form_state) {
+  global $base_url;
+  $verification_required = variable_get('anonymous_subscriptions_verify', TRUE);
+  $verify_int = (int)(!$verification_required);
+  $email = $form['email']['#value'];
+  $email = trim($email);
+  $code = substr(md5(uniqid(mt_rand(), true)), 0, 8);;
+
+  db_insert(SUBSCRIPTION_TABLE)
+    ->fields(array(
+      'email' => $email,
+      'verified' => $verify_int,
+      'code' => $code,
+    ))
+    ->execute();
+
+
+  if($verification_required) {
+    drupal_set_message("You will need to verify your email address.");
+    $subject = variable_get('site_name', "")." - subscription";
+    $body = array("To confirm your subscription please visit the following url ".$base_url."/subscription/".$code."/".$email."/verify");
+    anonymous_subscriptions_send_email($email, $subject, $body);
+  } else {
+    drupal_set_message("You are now subscribed to updates.");
+    $subject = variable_get('site_name', "")." - subscription";
+    $body = array("You are now subscribed to recieve updates from ".$base_url, "To unsubscribe please visit ".$base_url."/subscription/".$code."/".$email."/unsubscribe");
+    anonymous_subscriptions_send_email($email, $subject, $body);
+  }
+}
+
+/**
+ * Function called when the verify link is selected.
+ * If all details are correct changes verified status
+ * from 0 to 1 allowing that user to be sent subscription notifications.
+ *
+ * @param $code
+ *  The verification code used to verify a user
+ * @param $email
+ *  The email address of the user
+ *
+ */
+function anonymous_subscriptions_verify_email($code, $email) {
+  global $base_url;
+
+  // Get the record based on the verification code and email address
+  $result = db_select(SUBSCRIPTION_TABLE, 's')
+    ->fields('s')
+    ->condition('email', trim($email),'=')
+    ->condition('code', trim($code),'=')
+    ->execute()
+    ->fetchAssoc();
+
+  if($result) {
+    // If the result matches, update the email address to be verified
+    db_update(SUBSCRIPTION_TABLE)
+      ->fields(array(
+        'verified' => 1,
+      ))
+      ->condition('email', trim($email), '=')
+      ->execute();
+
+    drupal_set_message("Your email has been verified, you will now receive updates.");
+
+    // Send out another email informing the user that they are not verified.
+    $subject = variable_get('site_name', "")." - subscription";
+    $body = array("You are now subscribed to recieve updates from ".$base_url, "To unsubscribe please visit ".$base_url."/subscription/".$code."/".$email."/unsubscribe");
+    anonymous_subscriptions_send_email($email, $subject, $body);
+  }
+
+  // Redirect to homepage??
+  drupal_goto("/");
+}
+
+
+/**
+ * Function called when a user is unsubscribing.
+ *
+ * @param $code
+ *  The verification code used to verify a user
+ * @param $email
+ *  The email address of the user
+ */
+function anonymous_subscriptions_unsubscribe($code, $email) {
+
+  // Verify that the email address and verification code are correct
+  $result = db_select(SUBSCRIPTION_TABLE, 's')
+    ->fields('s')
+    ->condition('email', trim($email),'=')
+    ->condition('code', trim($code),'=')
+    ->execute()
+    ->fetchAssoc();
+  if($result) {
+    // If details are correct then remove the email from the database
+    db_delete('anonymous_subscriptions_emails')
+      ->condition('email', trim($email))
+      ->execute();
+
+    drupal_set_message("You have been unsubscribed from updates.");
+  }
+
+  // Redirect to homepage??
+  drupal_goto("/");
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form().
+ *
+ * This is used to display the checkbox as to whether or not send the notification
+ * for this particular node.
+ */
+function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form_id) {
+  $type = $form['type']['#value'];
+  $valid_types = variable_get('anonymous_subscriptions_node_types', array());
+  if(in_array($type, $valid_types)) {
+    $form['anonymous_subscription'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Subscription Settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#group' => 'additional_settings',
+      '#access' => user_access('alter subscriptions') || user_access('administer subscriptions'),
+      '#weight' => 25,
+      '#tree' => TRUE,
+    );
+    $form['anonymous_subscription']['send_emails'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Send e-mails to subscribers'),
+      '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
+      '#description' => t('Specify here if you would like to send out e-mails to subscribers.'),
+    );
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function anonymous_subscriptions_node_update($node) {
+  if(anonymous_subscriptions_should_send($node)) {
+    anonymous_subscriptions_add_pending_emails($node);
+  }
+}
+
+/**
+ * Function used to determine whether the email should be sent
+ * to the subscribers.
+ *
+ * This will check the status of the node currently and compare
+ * it to the original one.
+ *
+ * @param $node
+ *  The node object that specifies to the email
+ *
+ * @return bool
+ *  returns true or false depending if an email should be sent
+ */
+function anonymous_subscriptions_should_send($node) {
+  $type = $node->type;
+  $original = $node->original;
+  $valid_types = variable_get('anonymous_subscriptions_node_types', array());
+  if(in_array($type, $valid_types) && $node->status == 1 && $node->anonymous_subscription['send_emails'] == 1 && (empty($original) || $original->status == 0)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Function used to add pending emails to be sent to the database
+ * so they can be processed via cron at a later time.
+ *
+ * @param $node
+ *  The node object that specifies to the email
+ */
+function anonymous_subscriptions_add_pending_emails($node) {
+  global $base_url;
+  $original_base_url = $base_url;
+  $result = db_select(SUBSCRIPTION_TABLE, 'e')
+    ->fields('e', array('email', 'code'))
+    ->condition('verified', 1,'=')
+    ->execute()
+    ->fetchAll();
+
+  $new_base_url = variable_get('anonymous_subscriptions_site_url');
+  $new_base_url = token_replace($new_base_url);
+  $base_url = $new_base_url;
+
+  foreach ($result as $email) {
+    $subject = variable_get('anonymous_subscriptions_subject_text');
+    $body = variable_get('anonymous_subscriptions_body_text');
+    $body .= "\nTo unsubscribe please visit ".$new_base_url."/subscription/".$email->code."/".$email->email."/unsubscribe";
+
+    $subject = token_replace($subject, array('node' => $node));
+    $body = token_replace($body, array('node' => $node));
+
+    db_insert(PENDING_EMAIL_TABLE)
+    ->fields(array(
+      'email' => $email->email,
+      'subject' => $subject,
+      'body' => serialize(array($body)),
+      ))
+      ->execute();
+  }
+  $base_url = $original_base_url;
+
+  // Lets run the hook_cron function to take care of the first batch.
+  anonymous_subscriptions_cron();
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * This will collect the selected number of emails to be sent at any one
+ * time and perform this on cron run.
+ */
+function anonymous_subscriptions_cron() {
+  // search for expiration date interval
+  $result = db_select(PENDING_EMAIL_TABLE, 'p')
+    ->fields('p')
+    ->range(0, variable_get('anonymous_subscriptions_number_to_send', 100))
+    ->execute()
+    ->fetchAll();
+
+  foreach ($result as $email) {
+    // Log some information in case we need to verify that an email was sent then send the email.
+    watchdog(MODULE_NAME, "Sending email to [".$email->email."] with subject [".$email->subject."]", NULL, WATCHDOG_INFO, NULL);
+    anonymous_subscriptions_send_email($email->email, $email->subject, unserialize($email->body));
+
+    // Email has been sent, now remove them from the database so we don't send it again
+    db_delete(PENDING_EMAIL_TABLE)
+      ->condition('eid', $email->eid, '=')
+      ->execute();
+  }
+}
+
+/**
+ * Function used to send emails
+ * @param $to
+ *  The email address to send the email to
+ * @param $subject
+ *  The Subject text to be sent in the email
+ * @param $body
+ *  The Body text to be sent in the email
+ */
+function anonymous_subscriptions_send_email($to, $subject, $body) {
+  $message = drupal_mail('anonymous_subscriptions', 'key', $to, language_default(), array(), NULL, FALSE);
+  $message['subject'] = $subject;
+  $message['body'] = $body;
+  // Retrieve the responsible implementation for this message.
+  $system = drupal_mail_system('anonymous_subscriptions', 'key');
+  // Format the message body.
+  $message = $system->format($message);
+  // Send e-mail.
+  $message['result'] = $system->mail($message);
+}
+
+

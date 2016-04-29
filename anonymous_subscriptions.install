@@ -1,0 +1,100 @@
+<?php
+
+
+/**
+ * Implements hook_install().
+ */
+function anonymous_subscriptions_install() {
+  variable_set('anonymous_subscriptions_verify', TRUE);
+  variable_set('anonymous_subscriptions_number_to_send', 100);
+  variable_set('anonymous_subscriptions_send_default', FALSE);
+  variable_set('anonymous_subscriptions_node_types', array());
+  variable_set('anonymous_subscriptions_subject_text', "New content added to [site:name]");
+  variable_set('anonymous_subscriptions_body_text', "A new post has been made to [site:name].\nPlease visit [node:url] to see this new post!");
+  variable_set('anonymous_subscriptions_site_url', '[site:url]');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function anonymous_subscriptions_uninstall() {
+  drupal_uninstall_schema('anonymous_subscriptions');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function anonymous_subscriptions_enable() {
+  if(db_table_exists('anonymous_subscriptions_emails') == FALSE) {
+    drupal_install_schema('anonymous_subscriptions');
+  }
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function anonymous_subscriptions_schema() {
+  // Schema for the list of anonymous emails
+  $schema['anonymous_subscriptions_emails'] = array(
+    'description' => t('Stores email addresses for subscriptions.'),
+    'fields' => array(
+      'eid' => array(
+        'description' => 'The primary identifier for a email.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'email' => array(
+        'description' => 'The email address of the user.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE),
+      'verified' => array(
+        'description' => 'If they are verified.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'code' => array(
+        'description' => 'Code to verify and unsubscribe',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        ),
+    ),
+    'primary key' => array('eid'),
+    'unique keys' => array(
+      'email' => array('email'),
+    ),
+  );
+
+  // Schema to hold pending e-mails to be sent on cron
+  $schema['anonymous_subscriptions_pending_emails'] = array(
+    'description' => t('Stores email addresses for subscriptions.'),
+    'fields' => array(
+      'eid' => array(
+        'description' => 'The primary identifier for a email.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'email' => array(
+        'description' => 'The email address of the user.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE),
+      'subject' => array(
+        'description' => 'The subject of the email',
+        'type' => 'varchar',
+        'length' => 1000,
+        'not null' => TRUE,
+      ),
+      'body' => array(
+        'description' => 'The contents of the email',
+        'type' => 'blob',
+        'length' => 65535,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('eid'),
+  );
+
+return $schema;
+}

@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * Implements hook_settings().
+ *
+ * General Settings for Anonymous Subscriptions
+ */
+function anonymous_subscriptions_settings() {
+  $form = array();
+
+  $form['subscription_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Subscription Settings',
+  );
+
+  $form['subscription_fieldset']['anonymous_subscriptions_verify'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Emails must be verified'),
+    '#default_value' => variable_get('anonymous_subscriptions_verify', FALSE),
+  );
+
+  $form['subscription_fieldset']['anonymous_subscriptions_send_default'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Send by default'),
+    '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
+  );
+
+  $form['subscription_fieldset']['anonymous_subscriptions_number_to_send'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Number of emails to send at a time'),
+    '#default_value' => variable_get('anonymous_subscriptions_number_to_send', 100),
+    '#options' => array('50' => 50, '100' => 100, '200' => 200, '400' => 400),
+  );
+
+  $form['email_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Email Settings',
+  );
+
+  $form['email_fieldset']['anonymous_subscriptions_site_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Site URL"),
+    '#description' => "The URL you want to use as the base URL sent in e-mails. Tokens available",
+    '#default_value' => variable_get('anonymous_subscriptions_site_url'),
+  );
+
+  $form['email_fieldset']['anonymous_subscriptions_subject_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Subject Text"),
+    '#description' => "Tokens are available",
+    '#default_value' => variable_get('anonymous_subscriptions_subject_text'),
+  );
+
+  $form['email_fieldset']['anonymous_subscriptions_body_text'] = array(
+    '#type' => 'textarea',
+    '#title' => t("Body Text"),
+    '#description' => "Tokens are available",
+    '#default_value' => variable_get('anonymous_subscriptions_body_text'),
+  );
+
+  if (module_exists('token')) {
+    $form['email_fieldset']['token_help'] = array(
+      '#theme' => 'token_tree_link',
+      '#token_types' => array('site', 'node'),
+    );
+  }
+
+  $form['anonymous_subscriptions_node_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t("Node types enabled for subscription notifications"),
+    '#options' => node_type_get_names(),
+    '#default_value' => variable_get('anonymous_subscriptions_node_types', array()),
+  );
+
+  $form['array_filter'] = array(
+    '#type' => 'value',
+    '#value' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_settings_validate().
+ */
+function anonymous_subscriptions_settings_validate($form, $form_state) {
+  $url = $form['email_fieldset']['anonymous_subscriptions_site_url']['#value'];
+  if(!isset($url) || empty($url) || (!startsWith($url, 'http://') && !startsWith($url, 'https://') && !startsWith($url, '['))) {
+    form_set_error('anonymous_subscriptions_site_url', t('Please insert a valid URL or Token.'));
+  } else if(startsWith($url, '[') && !endsWith($url, ']')) {
+    form_set_error('anonymous_subscriptions_site_url', t('Please insert a valid URL or Token.'));
+  }
+}
+
+/**
+ * Helper function to determine if a string starts with a
+ * certain string
+ *
+ * @param $haystack
+ * @param $needle
+ * @return bool
+ */
+function startsWith($haystack, $needle) {
+  // search backwards starting from haystack length characters from the end
+  return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
+}
+
+/**
+ * Helper function to determine if a string ends with a
+ * certain string
+ *
+ * @param $haystack
+ * @param $needle
+ * @return bool
+ */
+function endsWith($haystack, $needle) {
+  // search forward starting from end minus needle length characters
+  return $needle === "" || (($temp = strlen($haystack) - strlen($needle)) >= 0 && strpos($haystack, $needle, $temp) !== false);
+}
+
+
