@@ -25,11 +25,11 @@ function anonymous_subscriptions_settings() {
     '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
   );
 
-  $form['subscription_fieldset']['anonymous_subscriptions_number_to_send'] = array(
+  $form['subscription_fieldset']['anonymous_subscriptions_time_to_send'] = array(
     '#type'          => 'select',
-    '#title'         => t('Number of emails to send at a time'),
-    '#default_value' => variable_get('anonymous_subscriptions_number_to_send', 100),
-    '#options' => array('50' => 50, '100' => 100, '200' => 200, '400' => 400),
+    '#title'         => t('Time to spend processing e-mails during cron.'),
+    '#default_value' => variable_get('anonymous_subscriptions_time_to_send', 30),
+    '#options' => array(30 => '30 seconds', 60 => '1 minute', 120 => '2 minutes', 300 => '5 minutes'),
   );
 
   $form['email_fieldset'] = array(
@@ -85,9 +85,9 @@ function anonymous_subscriptions_settings() {
  */
 function anonymous_subscriptions_settings_validate($form, $form_state) {
   $url = $form['email_fieldset']['anonymous_subscriptions_site_url']['#value'];
-  if(!isset($url) || empty($url) || (!startsWith($url, 'http://') && !startsWith($url, 'https://') && !startsWith($url, '['))) {
+  if(!isset($url) || empty($url) || (!_startsWith($url, 'http://') && !_startsWith($url, 'https://') && !_startsWith($url, '['))) {
     form_set_error('anonymous_subscriptions_site_url', t('Please insert a valid URL or Token.'));
-  } else if(startsWith($url, '[') && !endsWith($url, ']')) {
+  } else if(_startsWith($url, '[') && !_endsWith($url, ']')) {
     form_set_error('anonymous_subscriptions_site_url', t('Please insert a valid URL or Token.'));
   }
 }
@@ -100,7 +100,7 @@ function anonymous_subscriptions_settings_validate($form, $form_state) {
  * @param $needle
  * @return bool
  */
-function startsWith($haystack, $needle) {
+function _startsWith($haystack, $needle) {
   // search backwards starting from haystack length characters from the end
   return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
 }
@@ -113,7 +113,7 @@ function startsWith($haystack, $needle) {
  * @param $needle
  * @return bool
  */
-function endsWith($haystack, $needle) {
+function _endsWith($haystack, $needle) {
   // search forward starting from end minus needle length characters
   return $needle === "" || (($temp = strlen($haystack) - strlen($needle)) >= 0 && strpos($haystack, $needle, $temp) !== false);
 }

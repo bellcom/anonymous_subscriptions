@@ -6,7 +6,7 @@
  */
 function anonymous_subscriptions_install() {
   variable_set('anonymous_subscriptions_verify', TRUE);
-  variable_set('anonymous_subscriptions_number_to_send', 100);
+  variable_set('anonymous_subscriptions_time_to_send', 30);
   variable_set('anonymous_subscriptions_send_default', FALSE);
   variable_set('anonymous_subscriptions_node_types', array());
   variable_set('anonymous_subscriptions_subject_text', "New content added to [site:name]");
@@ -65,36 +65,5 @@ function anonymous_subscriptions_schema() {
       'email' => array('email'),
     ),
   );
-
-  // Schema to hold pending e-mails to be sent on cron
-  $schema['anonymous_subscriptions_pending_emails'] = array(
-    'description' => t('Stores email addresses for subscriptions.'),
-    'fields' => array(
-      'eid' => array(
-        'description' => 'The primary identifier for a email.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE),
-      'email' => array(
-        'description' => 'The email address of the user.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE),
-      'subject' => array(
-        'description' => 'The subject of the email',
-        'type' => 'varchar',
-        'length' => 1000,
-        'not null' => TRUE,
-      ),
-      'body' => array(
-        'description' => 'The contents of the email',
-        'type' => 'blob',
-        'length' => 65535,
-        'not null' => TRUE,
-      ),
-    ),
-    'primary key' => array('eid'),
-  );
-
 return $schema;
 }
