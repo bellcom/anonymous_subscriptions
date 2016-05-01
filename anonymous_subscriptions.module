@@ -28,6 +28,16 @@ function anonymous_subscriptions_permission() {
 }
 
 /**
+ * Implements hook_help().
+ */
+function anonymous_subscriptions_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#anonymous_subscriptions':
+      return '<p>' . t('Anonymous Subscriptions allows anonymous visitors to your site to subscribe to updates to nodes. The <a href="@anon">anonymous subscriptions administration page</a> allows you to configure options including whether emails need to be verified and which content types the option should appear to send notifications for.', array('@anon' => url('admin/config/content/anonymous_subscriptions'))) . '</p>';
+  }
+}
+
+/**
  * Implements hook_menu().
  */
 function anonymous_subscriptions_menu() {
