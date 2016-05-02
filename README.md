@@ -57,12 +57,11 @@ INSTALLATION AND CONFIGURATION
 ------------------------------
 
 0 - Prerequisites:
-Requires the Core Block module to be enabled.
+N/A
 
 1 - Download the module and copy it into your contributed modules folder:
 [for example, your_drupal_path/sites/all/modules] and enable it
-from the modules administration/management page (requires the block module to be
-enabled).
+from the modules administration/management page.
 
 2 - Configuration:
 After successful installation, browse to the Anonymous Subscriptions configuration

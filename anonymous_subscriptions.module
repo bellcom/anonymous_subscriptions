@@ -10,6 +10,7 @@ define("SUBSCRIPTION_TABLE", "anonymous_subscriptions_emails");
 define("PENDING_EMAIL_TABLE", "anonymous_subscriptions_pending_emails");
 define("MODULE_NAME", "anonymous_subscription");
 define("QUEUE_NAME", "anonymous_subscriptions_queue");
+define("VALID_TYPES", "anonymous_subscriptions_node_types");
 
 /**
  * Implements hook_permission().
@@ -62,6 +63,7 @@ function anonymous_subscriptions_menu() {
     'page callback' => '_anonymous_subscriptions_remove_pending',
     'page arguments' => array(1),
     'access arguments' => array('alter subscriptions'),
+    'access callback' => '_anonymous_subscriptions_token_check',
   );
 
   $items['subscription/%/%/verify'] = array(
@@ -77,6 +79,17 @@ function anonymous_subscriptions_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Custom access callback
+ */
+function _anonymous_subscriptions_token_check() {
+  if (!user_access('alter subscriptions') && empty($_GET['tok']) || !drupal_valid_token($_GET['tok'])) {
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /**
@@ -297,24 +310,35 @@ function _anonymous_subscriptions_unsubscribe($code, $email) {
  */
 function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form_id) {
   $type = $form['type']['#value'];
-  $valid_types = variable_get('anonymous_subscriptions_node_types', array());
+  $valid_types = variable_get(VALID_TYPES, array());
   if(in_array($type, $valid_types)) {
-    $form['anonymous_subscription'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Subscription Settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#group' => 'additional_settings',
-      '#access' => user_access('alter subscriptions') || user_access('administer subscriptions'),
-      '#weight' => 25,
-      '#tree' => TRUE,
-    );
-    $form['anonymous_subscription']['send_emails'] = array(
+    $form['options']['send_emails'] = array(
       '#type' => 'checkbox',
       '#title' => t('Send e-mails to subscribers'),
       '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
-      '#description' => t('Specify here if you would like to send out e-mails to subscribers.'),
+      '#access' => user_access('alter subscriptions') || user_access('administer subscriptions'),
     );
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form().
+ *
+ * This is used to display the checkbox as to whether or not send the notification
+ * for this particular node on the workbench block.
+ */
+function anonymous_subscriptions_form_workbench_moderation_moderate_form_alter(&$form, $form_state, $form_id) {
+  $node = $form['node']['#value'];
+  $type = $node->type;
+  $valid_types = variable_get(VALID_TYPES, array());
+  if(in_array($type, $valid_types)) {
+    $form['send_emails'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Send e-mails to subscribers'),
+      '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
+      '#access' => user_access('alter subscriptions') || user_access('administer subscriptions'),
+    );
+    $form['#submit'][] = 'anonymous_subscriptions_workbench_moderation_form_submit';
   }
 }
 
@@ -339,37 +363,46 @@ function anonymous_subscriptions_node_update($node) {
  *
  * Workbench is its own little thing of beauty so it needs
  * its own special implementation.
+ * In here we get the value from our form, then add it to the fresh node_load
+ * object, then continue with how we would normally check to send emails.
  */
-function anonymous_subscriptions_workbench_moderation_transition($node, $previous_state, $new_state) {
-  if(_anonymous_subscriptions_should_send_workbench($node, $new_state, $previous_state)) {
+function anonymous_subscriptions_workbench_moderation_form_submit(&$form, &$form_state) {
+  $send_email = $form['send_emails']['#value'];
+  $to_state = $form['state']['#value'];
+  $nid = $form['node']['#value']->nid;
+  $node = node_load($nid);
+  $node->send_emails = $send_email;
+  if(workbench_moderation_state_published() == $to_state) {
+    //Set the node status to published so our subscription checker sees this as published
+    $node->status = 1;
+  }
+  if(_anonymous_subscriptions_should_send_workbench($node)) {
     _anonymous_subscriptions_add_pending_emails($node);
   }
 }
 
-
 /**
  * Function used to determine whether the email should be sent
- * to the subscribers.
+ * to the subscribers form workbench.
  *
- * This will run only if the node is using the workbench transition
- * hook.
+ * This will check the status of the node currently and compare
+ * it to the original one.
  *
  * @param $node
  *  The node object that specifies to the email
- * @param $new_state
- *  The workbench state of the newly saved node
- * @param $previous_state
- *  The workbench state before this node was saved
  *
  * @return bool
  *  returns true or false depending if an email should be sent
  */
-function _anonymous_subscriptions_should_send_workbench($node, $new_state, $previous_state) {
+function _anonymous_subscriptions_should_send_workbench($node) {
   $type = $node->type;
-  $valid_types = variable_get('anonymous_subscriptions_node_types', array());
-
-  //die(var_dump($node));
-  if(in_array($type, $valid_types) && $new_state == 'published' && isset($node->anonymous_subscription_workbench) && $node->anonymous_subscription_workbench[LANGUAGE_NONE][0]['value'] == 1) {
+  $original = array();
+  if(isset($node->original)) {
+    $original = $node->original;
+  }
+  $valid_types = variable_get(VALID_TYPES, array());
+  if(in_array($type, $valid_types) && $node->status == 1 && isset($node->send_emails) &&
+    $node->send_emails == 1 && (empty($original) || $original->status == 0)) {
     return TRUE;
   }
   return FALSE;
@@ -394,8 +427,9 @@ function _anonymous_subscriptions_should_send($node) {
   if(isset($node->original)) {
     $original = $node->original;
   }
-  $valid_types = variable_get('anonymous_subscriptions_node_types', array());
-  if(in_array($type, $valid_types) && $node->status == 1 && $node->anonymous_subscription['send_emails'] == 1 && (empty($original) || $original->status == 0)) {
+  $valid_types = variable_get(VALID_TYPES, array());
+  if(in_array($type, $valid_types) && $node->status == 1 && isset($node->send_emails) &&
+    $node->send_emails == 1 && (empty($original) || $original->status == 0)) {
     return TRUE;
   }
   return FALSE;
@@ -445,10 +479,10 @@ function _anonymous_subscriptions_add_pending_emails($node) {
     $count++;
   }
   $base_url = $original_base_url;
-  // Lets run the hook_cron function to take care of the first batch (remove before final).
+  //TODO: Lets run the hook_cron function to take care of the first batch (remove before final).
   //_anonymous_subscriptions_process_queue();
 
-  drupal_set_message("Sending emails to ".$count." subscriptions. <a href='/subscription/".$node->nid."/remove'>Click here to remove pending emails</a>.");
+  drupal_set_message("Sending emails to ".$count." subscriptions. <a href='/subscription/".$node->nid."/remove?tok=".drupal_get_token()."'>Click here to remove pending emails</a>.");
 }
 
 /*
@@ -506,5 +540,3 @@ function _anonymous_subscriptions_send_email($to, $subject, $body) {
   // Send e-mail.
   $message['result'] = $system->mail($message);
 }
-
-
