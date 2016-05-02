@@ -238,7 +238,7 @@ function _anonymous_subscriptions_remove_pending($nid) {
     $email = $item->data;
     if($email['nid'] == $nid) {
       // Log some information in case we need to verify that an email was sent then send the email.
-      $log_text = t("Removing email");
+      $log_text = t("Removing email to !email with subject !subject", ['!email' => $email['email'], '!subject' => $email['subject']]);
       watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
 
       $queue->deleteItem($item);
@@ -509,9 +509,7 @@ function _anonymous_subscriptions_add_pending_emails($node) {
     );
 
     $queue->createItem($fields);
-
-    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, 'Adding to queue email', NULL, WATCHDOG_INFO);
-
+    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, "Adding pending email to [".$fields['email']."] with subject [".$fields['subject']."] for nid [".$fields['nid']."]", NULL, WATCHDOG_INFO, NULL);
     $count++;
   }
 
@@ -540,26 +538,12 @@ function anonymous_subscriptions_cron_queue_info(){
  * This will collect the selected number of emails to be sent at any one
  * time and perform this on cron run.
  */
-function _anonymous_subscriptions_process_queue() {
-  watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, "Kick off cron queue", NULL, WATCHDOG_INFO);
-  $max_to_send = variable_get('anonymous_subscriptions_max_to_send', 200);
-  // search for expiration date interval
-  $queue = DrupalQueue::get(ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME);
-  $count = 0;
-  while($item = $queue->claimItem()) {
-    $email = $item->data;
+function _anonymous_subscriptions_process_queue($data) {
+  $email = $data;
     // Log some information in case we need to verify that an email was sent then send the email.
-    $log_text = t("Sending emails");
-    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO);
-
-    drupal_mail('anonymous_subscriptions', 'anonymous_subscriptions_key', $email['email'], language_default(), $email);
-
-    $queue->deleteItem($item);
-    $count++;
-    if($count > $max_to_send) {
-      break;
-    }
-  }
+  $log_text = t("Sending emails to !email with subject !subject", ['!email' => $email['email'], '!subject' => $email['subject']]);
+  watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
+  drupal_mail('anonymous_subscriptions', 'anonymous_subscriptions_key', $email['email'], language_default(), $email);
 
   return TRUE;
 }
