@@ -27,9 +27,9 @@ function anonymous_subscriptions_settings() {
 
   $form['subscription_fieldset']['anonymous_subscriptions_max_to_send'] = array(
     '#type' => 'select',
-    '#title' => t('Maximum number of e-mails to process during cron.'),
-    '#default_value' => variable_get('anonymous_subscriptions_max_to_send', 200),
-    '#options' => array(100 => '100', 200 => '200', 500 => '500', 1000 => '1000'),
+    '#title' => t('Maximum time to spend processing e-mails during cron.'),
+    '#default_value' => variable_get('anonymous_subscriptions_max_to_send', 60),
+    '#options' => array(30 => '30 seconds', 60 => '1 minute', 120 => '2 minutes'),
   );
 
   $form['email_fieldset'] = array(
