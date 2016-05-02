@@ -58,6 +58,12 @@ function anonymous_subscriptions_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
+  $items['subscription/%/remove'] = array(
+    'page callback' => '_anonymous_subscriptions_remove_pending',
+    'page arguments' => array(1),
+    'access arguments' => array('alter subscriptions'),
+  );
+
   $items['subscription/%/%/verify'] = array(
     'page callback' => '_anonymous_subscriptions_verify_email',
     'page arguments' => array(1, 2),
@@ -181,6 +187,32 @@ function anonymous_subscriptions_form_submit($form, &$form_state) {
     $body = array("You are now subscribed to recieve updates from ".$base_url, "To unsubscribe please visit ".$base_url."/subscription/".$code."/".$email."/unsubscribe");
     _anonymous_subscriptions_send_email($email, $subject, $body);
   }
+}
+
+/**
+ * Function called to remove pending emails from the
+ * queue.
+ *
+ * @param $nid
+ * The nid to remove pending emails for
+ *
+ */
+function _anonymous_subscriptions_remove_pending($nid) {
+  $queue = DrupalQueue::get(QUEUE_NAME);
+  $count = 0;
+  while($item = $queue->claimItem()) {
+    $email = $item->data;
+    if($email['nid'] == $nid) {
+      // Log some information in case we need to verify that an email was sent then send the email.
+      watchdog(MODULE_NAME, "Removing email to [" . $email['email'] . "] with subject [" . $email['subject'] . "]", NULL, WATCHDOG_INFO, NULL);
+
+      $queue->deleteItem($item);
+      $count++;
+    }
+  }
+
+  drupal_set_message("Removed ".$count." pending subscriptions.");
+  drupal_goto("/node/".$nid);
 }
 
 /**
@@ -394,6 +426,7 @@ function _anonymous_subscriptions_add_pending_emails($node) {
   $original_subject = variable_get('anonymous_subscriptions_subject_text');
   $original_body = variable_get('anonymous_subscriptions_body_text');
 
+  $count = 0;
   foreach ($result as $email) {
     $body = $original_body;
     $body .= "\nTo unsubscribe please visit ".$new_base_url."/subscription/".$email->code."/".$email->email."/unsubscribe";
@@ -405,13 +438,17 @@ function _anonymous_subscriptions_add_pending_emails($node) {
       'email' => $email->email,
       'subject' => $subject,
       'body' => array($body),
+      'nid' => $node->nid,
     );
 
     $queue->createItem($fields);
+    $count++;
   }
   $base_url = $original_base_url;
-  // Lets run the hook_cron function to take care of the first batch.
-  _anonymous_subscriptions_process_queue();
+  // Lets run the hook_cron function to take care of the first batch (remove before final).
+  //_anonymous_subscriptions_process_queue();
+
+  drupal_set_message("Sending emails to ".$count." subscriptions. <a href='/subscription/".$node->nid."/remove'>Click here to remove pending emails</a>.");
 }
 
 /*
@@ -420,7 +457,6 @@ function _anonymous_subscriptions_add_pending_emails($node) {
 function anonymous_subscriptions_cron_queue_info(){
   $queues[QUEUE_NAME] = array(
     'worker callback' => '_anonymous_subscriptions_process_queue',
-    'time' => variable_get('anonymous_subscriptions_time_to_send', 30),
   );
   return $queues;
 }
@@ -432,16 +468,21 @@ function anonymous_subscriptions_cron_queue_info(){
  * time and perform this on cron run.
  */
 function _anonymous_subscriptions_process_queue() {
+  $max_to_send = variable_get('anonymous_subscriptions_max_to_send', 200);
   // search for expiration date interval
   $queue = DrupalQueue::get(QUEUE_NAME);
-
+  $count = 0;
   while($item = $queue->claimItem()) {
+    if($count > $max_to_send) {
+      break;
+    }
     $email = $item->data;
     // Log some information in case we need to verify that an email was sent then send the email.
     watchdog(MODULE_NAME, "Sending email to [".$email['email']."] with subject [".$email['subject']."]", NULL, WATCHDOG_INFO, NULL);
     _anonymous_subscriptions_send_email($email['email'], $email['subject'], $email['body']);
 
     $queue->deleteItem($item);
+    $count++;
   }
 }
 

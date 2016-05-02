@@ -6,7 +6,7 @@
  */
 function anonymous_subscriptions_install() {
   variable_set('anonymous_subscriptions_verify', TRUE);
-  variable_set('anonymous_subscriptions_time_to_send', 30);
+  variable_set('anonymous_subscriptions_max_to_send', 200);
   variable_set('anonymous_subscriptions_send_default', FALSE);
   variable_set('anonymous_subscriptions_node_types', array());
   variable_set('anonymous_subscriptions_subject_text', "New content added to [site:name]");
