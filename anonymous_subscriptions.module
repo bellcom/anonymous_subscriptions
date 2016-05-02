@@ -509,7 +509,8 @@ function _anonymous_subscriptions_add_pending_emails($node) {
     );
 
     $queue->createItem($fields);
-    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, "Adding pending email to [".$fields['email']."] with subject [".$fields['subject']."] for nid [".$fields['nid']."]", NULL, WATCHDOG_INFO, NULL);
+    $log_text = t("Adding pending email to !email with subject !subject for nid !nid", ['!email' => $fields['email'], '!subject' => $fields['subject'], '!nid' => $fields['nid']]);
+    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
     $count++;
   }
 
