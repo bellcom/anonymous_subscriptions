@@ -9,7 +9,7 @@ function anonymous_subscriptions_install() {
   variable_set('anonymous_subscriptions_max_to_send', 200);
   variable_set('anonymous_subscriptions_send_default', FALSE);
   variable_set('anonymous_subscriptions_node_types', array());
-  variable_set('anonymous_subscriptions_subject_text', "New content added to [site:name]");
+  variable_set('anonymous_subscriptions_subject_text', 'New content added to [site:name]');
   variable_set('anonymous_subscriptions_body_text', "A new post has been made to [site:name].\nPlease visit [node:url] to see this new post!");
   variable_set('anonymous_subscriptions_site_url', '[site:url]');
 }
@@ -18,7 +18,13 @@ function anonymous_subscriptions_install() {
  * Implementation of hook_uninstall().
  */
 function anonymous_subscriptions_uninstall() {
-  drupal_uninstall_schema('anonymous_subscriptions');
+  variable_del('anonymous_subscriptions_verify');
+  variable_del('anonymous_subscriptions_max_to_send');
+  variable_del('anonymous_subscriptions_send_default');
+  variable_del('anonymous_subscriptions_node_types');
+  variable_del('anonymous_subscriptions_subject_text');
+  variable_del('anonymous_subscriptions_body_text');
+  variable_del('anonymous_subscriptions_site_url');
 }
 
 /**

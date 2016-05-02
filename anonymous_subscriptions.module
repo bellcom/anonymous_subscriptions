@@ -1,29 +1,34 @@
 <?php
 /**
  * @file
- * Anonymous Subscriptions module is used to allow anonymous users to register
- * for notifications or updates to nodes based on specific content types.
+ * The Anonymous Subscriptions module allows a non-registered user to your site
+ * the ability to register for email notifications to certain pre-defined content types.
+ *
+ * These notifications are optional on the pre-defined content types with a flag
+ * displayed as to whether to send e-mails or not.
+ *
+ * There is currently only one subscription list per site, future functionality will add
+ * the ability for users to subscribe per content type, and/or per node.
  *
  */
 
-define("SUBSCRIPTION_TABLE", "anonymous_subscriptions_emails");
-define("PENDING_EMAIL_TABLE", "anonymous_subscriptions_pending_emails");
-define("MODULE_NAME", "anonymous_subscription");
-define("QUEUE_NAME", "anonymous_subscriptions_queue");
-define("VALID_TYPES", "anonymous_subscriptions_node_types");
+define('ANONYMOUS_SUBSCRIPTIONS_TABLE', 'anonymous_subscriptions_emails');
+define('ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME', 'anonymous_subscription');
+define('ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME', 'anonymous_subscriptions_queue');
+define('ANONYMOUS_SUBSCRIPTIONS_VALID_TYPES', 'anonymous_subscriptions_node_types');
 
 /**
  * Implements hook_permission().
  */
 function anonymous_subscriptions_permission() {
   return array(
-    'administer subscriptions' => array(
-      'description' => t('Configure the Subscription settings.'),
-      'title' => t('Administer Subscription Settings'),
+    'administer anonymous_subscriptions' => array(
+      'description' => t('Configure the subscription settings.'),
+      'title' => t('Administer subscription Settings'),
     ),
-    'alter subscriptions' => array(
-      'description' => t('Change Subscription settings on node form.'),
-      'title' => t('Change Subscription settings on node form'),
+    'alter anonymous_subscriptions' => array(
+      'description' => t('Change subscription settings on node form.'),
+      'title' => t('Change subscription settings on node form'),
     ),
   );
 }
@@ -45,16 +50,16 @@ function anonymous_subscriptions_menu() {
   $items = array();
 
   $items['admin/config/content/anonymous_subscriptions'] = array(
-    'title' => 'Anonymous Subscriptions',
-    'description' => 'Subscription integration settings and configuration',
+    'title' => t('Anonymous subscriptions'),
+    'description' => t('Subscription integration settings and configuration'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('anonymous_subscriptions_settings'),
-    'access arguments' => array('administer subscriptions'),
+    'access arguments' => array('administer anonymous_subscriptions'),
     'file' => 'anonymous_subscriptions.admin.inc',
   );
 
   $items['admin/config/content/anonymous_subscriptions/settings'] = array(
-    'title' => 'Settings',
+    'title' => t('Settings'),
     'weight' => -10,
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
@@ -62,7 +67,6 @@ function anonymous_subscriptions_menu() {
   $items['subscription/%/remove'] = array(
     'page callback' => '_anonymous_subscriptions_remove_pending',
     'page arguments' => array(1),
-    'access arguments' => array('alter subscriptions'),
     'access callback' => '_anonymous_subscriptions_token_check',
   );
 
@@ -85,7 +89,7 @@ function anonymous_subscriptions_menu() {
  * Custom access callback
  */
 function _anonymous_subscriptions_token_check() {
-  if (!user_access('alter subscriptions') && empty($_GET['tok']) || !drupal_valid_token($_GET['tok'])) {
+  if (!user_access('alter anonymous_subscriptions') && empty($_GET['tok']) || !drupal_valid_token($_GET['tok'])) {
     return FALSE;
   }
 
@@ -96,10 +100,8 @@ function _anonymous_subscriptions_token_check() {
  * Implements hook_block_info().
  */
 function anonymous_subscriptions_block_info() {
-  $blocks['anon_subscriptions_email_block'] = array(
-    // The name that will appear in the block list.
-    'info' => t('Anonymous Subscription Email Block'),
-    // Default setting.
+  $blocks['anonymous_subscriptions_block'] = array(
+    'info' => t('Anonymous subscription email block'),
     'cache' => DRUPAL_CACHE_PER_ROLE,
   );
   return $blocks;
@@ -110,8 +112,8 @@ function anonymous_subscriptions_block_info() {
  */
 function anonymous_subscriptions_block_view($delta = '') {
   switch ($delta) {
-    case 'anon_subscriptions_email_block':
-      $block['subject'] = t('E-mail:');
+    case 'anonymous_subscriptions_block':
+      $block['subject'] = t('Email');
       if (user_access('access content')) {
         // Retrieve and process data here.
         $the_form = drupal_get_form('anonymous_subscriptions_form');
@@ -131,13 +133,13 @@ function anonymous_subscriptions_block_view($delta = '') {
 function anonymous_subscriptions_form() {
   $form['email'] = array(
     '#type' => 'textfield',
-    '#title' => t('Email:'),
+    '#title' => t('Email'),
     '#default_value' => '',
     '#required' => TRUE,
   );
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => 'Submit',
+    '#value' => t('Submit'),
   );
   $form['#validate'][] = 'anonymous_subscriptions_form_validate';
   $form['#submit'][] = 'anonymous_subscriptions_form_submit';
@@ -154,7 +156,7 @@ function anonymous_subscriptions_form_validate($form, &$form_state) {
   if ($email && !valid_email_address($email)) {
     form_set_error('email', 'You must enter a valid email address.');
   } else {
-    $result = db_select(SUBSCRIPTION_TABLE, 's')
+    $result = db_select(ANONYMOUS_SUBSCRIPTIONS_TABLE, 's')
       ->fields('s')
       ->condition('email', trim($email),'=')
       ->execute()
@@ -174,13 +176,16 @@ function anonymous_subscriptions_form_validate($form, &$form_state) {
  */
 function anonymous_subscriptions_form_submit($form, &$form_state) {
   global $base_url;
+  $original_base_url = $base_url;
+  $site_url = variable_get('anonymous_subscriptions_site_url', '[site:url]');
+  $base_url = token_replace($site_url);
   $verification_required = variable_get('anonymous_subscriptions_verify', TRUE);
   $verify_int = (int)(!$verification_required);
   $email = $form['email']['#value'];
   $email = trim($email);
   $code = substr(md5(uniqid(mt_rand(), true)), 0, 8);;
 
-  db_insert(SUBSCRIPTION_TABLE)
+  db_insert(ANONYMOUS_SUBSCRIPTIONS_TABLE)
     ->fields(array(
       'email' => $email,
       'verified' => $verify_int,
@@ -190,16 +195,22 @@ function anonymous_subscriptions_form_submit($form, &$form_state) {
 
 
   if($verification_required) {
-    drupal_set_message("You will need to verify your email address.");
-    $subject = variable_get('site_name', "")." - subscription";
-    $body = array("To confirm your subscription please visit the following url ".$base_url."/subscription/".$code."/".$email."/verify");
+    drupal_set_message('You will need to verify your email address.');
+    $subject = variable_get('site_name', '[site:name]').' - subscription';
+    $text = t('To confirm your subscription please visit the following url !url', ['!url' => url("subscription/$code/$email/verify", ['absolute' => TRUE])]);
+    $body = array($text);
     _anonymous_subscriptions_send_email($email, $subject, $body);
   } else {
-    drupal_set_message("You are now subscribed to updates.");
-    $subject = variable_get('site_name', "")." - subscription";
-    $body = array("You are now subscribed to recieve updates from ".$base_url, "To unsubscribe please visit ".$base_url."/subscription/".$code."/".$email."/unsubscribe");
+    drupal_set_message('You are now subscribed to updates.');
+    $subject = variable_get('site_name', '[site:name]').' - subscription';
+    $text = t("You are now subscribed to receive updates from !base_url.  To unsubscribe please visit !url", ['!base_url' => url($base_url),'!url' => url("subscription/$code/$email/unsubscribe", ['absolute' => TRUE])]);
+    $body = array($text);
     _anonymous_subscriptions_send_email($email, $subject, $body);
   }
+
+  // Setting base URL back to the original as to ensure we get the correct url (after token replacing etc)
+  // for our $site_url variable, e.g. if node:url is used we want the correct base_url
+  $base_url = $original_base_url;
 }
 
 /**
@@ -211,21 +222,22 @@ function anonymous_subscriptions_form_submit($form, &$form_state) {
  *
  */
 function _anonymous_subscriptions_remove_pending($nid) {
-  $queue = DrupalQueue::get(QUEUE_NAME);
+  $queue = DrupalQueue::get(ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME);
   $count = 0;
   while($item = $queue->claimItem()) {
     $email = $item->data;
     if($email['nid'] == $nid) {
       // Log some information in case we need to verify that an email was sent then send the email.
-      watchdog(MODULE_NAME, "Removing email to [" . $email['email'] . "] with subject [" . $email['subject'] . "]", NULL, WATCHDOG_INFO, NULL);
+      $log_text = t("Removing email to !email with subject !subject", ['!email' => $email['email'], '!subject' => $email['subject']]);
+      watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
 
       $queue->deleteItem($item);
       $count++;
     }
   }
 
-  drupal_set_message("Removed ".$count." pending subscriptions.");
-  drupal_goto("/node/".$nid);
+  drupal_set_message("Removed $count pending subscriptions.");
+  drupal_goto("/node/$nid");
 }
 
 /**
@@ -241,9 +253,11 @@ function _anonymous_subscriptions_remove_pending($nid) {
  */
 function _anonymous_subscriptions_verify_email($code, $email) {
   global $base_url;
-
+  $original_base_url = $base_url;
+  $site_url = variable_get('anonymous_subscriptions_site_url', '[site:url]');
+  $base_url = token_replace($site_url);
   // Get the record based on the verification code and email address
-  $result = db_select(SUBSCRIPTION_TABLE, 's')
+  $result = db_select(ANONYMOUS_SUBSCRIPTIONS_TABLE, 's')
     ->fields('s')
     ->condition('email', trim($email),'=')
     ->condition('code', trim($code),'=')
@@ -252,23 +266,27 @@ function _anonymous_subscriptions_verify_email($code, $email) {
 
   if($result) {
     // If the result matches, update the email address to be verified
-    db_update(SUBSCRIPTION_TABLE)
+    db_update(ANONYMOUS_SUBSCRIPTIONS_TABLE)
       ->fields(array(
         'verified' => 1,
       ))
       ->condition('email', trim($email), '=')
       ->execute();
 
-    drupal_set_message("Your email has been verified, you will now receive updates.");
+    drupal_set_message('Your email has been verified, you will now receive updates.');
 
     // Send out another email informing the user that they are not verified.
-    $subject = variable_get('site_name', "")." - subscription";
-    $body = array("You are now subscribed to recieve updates from ".$base_url, "To unsubscribe please visit ".$base_url."/subscription/".$code."/".$email."/unsubscribe");
+    $subject = variable_get('site_name', '[site:name]').' - subscription';
+    $text = t("You are now subscribed to receive updates from !base_url.  To unsubscribe please visit !url", ['!base_url' => url($base_url),'!url' => url("subscription/$code/$email/unsubscribe", ['absolute' => TRUE])]);
+    $body = array($text);
     _anonymous_subscriptions_send_email($email, $subject, $body);
   }
 
-  // Redirect to homepage??
-  drupal_goto("/");
+  // Setting base URL back to the original as to ensure we get the correct url (after token replacing etc)
+  // for our $site_url variable, e.g. if node:url is used we want the correct base_url
+  $base_url = $original_base_url;
+  // Redirect to homepage
+  drupal_goto('<front>');
 }
 
 
@@ -283,7 +301,7 @@ function _anonymous_subscriptions_verify_email($code, $email) {
 function _anonymous_subscriptions_unsubscribe($code, $email) {
 
   // Verify that the email address and verification code are correct
-  $result = db_select(SUBSCRIPTION_TABLE, 's')
+  $result = db_select(ANONYMOUS_SUBSCRIPTIONS_TABLE, 's')
     ->fields('s')
     ->condition('email', trim($email),'=')
     ->condition('code', trim($code),'=')
@@ -291,15 +309,15 @@ function _anonymous_subscriptions_unsubscribe($code, $email) {
     ->fetchAssoc();
   if($result) {
     // If details are correct then remove the email from the database
-    db_delete(SUBSCRIPTION_TABLE)
+    db_delete(ANONYMOUS_SUBSCRIPTIONS_TABLE)
       ->condition('email', trim($email))
       ->execute();
 
-    drupal_set_message("You have been unsubscribed from updates.");
+    drupal_set_message('You have been unsubscribed from updates.');
   }
 
   // Redirect to homepage??
-  drupal_goto("/");
+  drupal_goto('<front>');
 }
 
 /**
@@ -310,13 +328,13 @@ function _anonymous_subscriptions_unsubscribe($code, $email) {
  */
 function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form_id) {
   $type = $form['type']['#value'];
-  $valid_types = variable_get(VALID_TYPES, array());
+  $valid_types = variable_get(ANONYMOUS_SUBSCRIPTIONS_VALID_TYPES, array());
   if(in_array($type, $valid_types)) {
     $form['options']['send_emails'] = array(
       '#type' => 'checkbox',
       '#title' => t('Send e-mails to subscribers'),
       '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
-      '#access' => user_access('alter subscriptions') || user_access('administer subscriptions'),
+      '#access' => user_access('alter anonymous_subscriptions') || user_access('administer anonymous_subscriptions'),
     );
   }
 }
@@ -330,13 +348,13 @@ function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form
 function anonymous_subscriptions_form_workbench_moderation_moderate_form_alter(&$form, $form_state, $form_id) {
   $node = $form['node']['#value'];
   $type = $node->type;
-  $valid_types = variable_get(VALID_TYPES, array());
+  $valid_types = variable_get(ANONYMOUS_SUBSCRIPTIONS_VALID_TYPES, array());
   if(in_array($type, $valid_types)) {
     $form['send_emails'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Send e-mails to subscribers'),
+      '#title' => t('Send emails to subscribers'),
       '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
-      '#access' => user_access('alter subscriptions') || user_access('administer subscriptions'),
+      '#access' => user_access('alter anonymous_subscriptions') || user_access('administer anonymous_subscriptions'),
     );
     $form['#submit'][] = 'anonymous_subscriptions_workbench_moderation_form_submit';
   }
@@ -400,7 +418,7 @@ function _anonymous_subscriptions_should_send_workbench($node) {
   if(isset($node->original)) {
     $original = $node->original;
   }
-  $valid_types = variable_get(VALID_TYPES, array());
+  $valid_types = variable_get(ANONYMOUS_SUBSCRIPTIONS_VALID_TYPES, array());
   if(in_array($type, $valid_types) && $node->status == 1 && isset($node->send_emails) &&
     $node->send_emails == 1 && (empty($original) || $original->status == 0)) {
     return TRUE;
@@ -427,7 +445,7 @@ function _anonymous_subscriptions_should_send($node) {
   if(isset($node->original)) {
     $original = $node->original;
   }
-  $valid_types = variable_get(VALID_TYPES, array());
+  $valid_types = variable_get(ANONYMOUS_SUBSCRIPTIONS_VALID_TYPES, array());
   if(in_array($type, $valid_types) && $node->status == 1 && isset($node->send_emails) &&
     $node->send_emails == 1 && (empty($original) || $original->status == 0)) {
     return TRUE;
@@ -445,25 +463,25 @@ function _anonymous_subscriptions_should_send($node) {
 function _anonymous_subscriptions_add_pending_emails($node) {
   global $base_url;
   $original_base_url = $base_url;
-  $result = db_select(SUBSCRIPTION_TABLE, 'e')
+  $result = db_select(ANONYMOUS_SUBSCRIPTIONS_TABLE, 'e')
     ->fields('e', array('email', 'code'))
     ->condition('verified', 1,'=')
     ->execute()
     ->fetchAll();
 
-  $new_base_url = variable_get('anonymous_subscriptions_site_url');
+  $new_base_url = variable_get('anonymous_subscriptions_site_url', '[site:url]');
   $new_base_url = token_replace($new_base_url);
   $base_url = $new_base_url;
 
-  $queue = DrupalQueue::get(QUEUE_NAME);
+  $queue = DrupalQueue::get(ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME);
 
-  $original_subject = variable_get('anonymous_subscriptions_subject_text');
-  $original_body = variable_get('anonymous_subscriptions_body_text');
+  $original_subject = variable_get('anonymous_subscriptions_subject_text', 'New content added to [site:name]');
+  $original_body = variable_get('anonymous_subscriptions_body_text', "A new post has been made to [site:name].\nPlease visit [node:url] to see this new post!");
 
   $count = 0;
   foreach ($result as $email) {
     $body = $original_body;
-    $body .= "\nTo unsubscribe please visit ".$new_base_url."/subscription/".$email->code."/".$email->email."/unsubscribe";
+    $body .= t("\n\nTo unsubscribe please visit !url", ['!url' => url("subscription/$email->code/$email->email/unsubscribe", ['absolute' => TRUE])]);
 
     $subject = token_replace($original_subject, array('node' => $node));
     $body = token_replace($body, array('node' => $node));
@@ -478,25 +496,28 @@ function _anonymous_subscriptions_add_pending_emails($node) {
     $queue->createItem($fields);
     $count++;
   }
-  $base_url = $original_base_url;
-  //TODO: Lets run the hook_cron function to take care of the first batch (remove before final).
-  //_anonymous_subscriptions_process_queue();
 
-  drupal_set_message("Sending emails to ".$count." subscriptions. <a href='/subscription/".$node->nid."/remove?tok=".drupal_get_token()."'>Click here to remove pending emails</a>.");
+  // Setting base URL back to the original as to ensure we get the correct url (after token replacing etc)
+  // for our $site_url variable, e.g. if node:url is used we want the correct base_url
+  $base_url = $original_base_url;
+  $message = t("Sending emails to $count subscriptions. <a href='!url'>Click here to remove pending emails</a>", ['!url' => "/subscription/$node->nid/remove?tok=".drupal_get_token()]);
+  drupal_set_message($message);
+
+  //_anonymous_subscriptions_process_queue();
 }
 
 /*
  * Implements hook_cron_queue_info().
  */
 function anonymous_subscriptions_cron_queue_info(){
-  $queues[QUEUE_NAME] = array(
+  $queues[ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME] = array(
     'worker callback' => '_anonymous_subscriptions_process_queue',
+    'time' => 60,
   );
   return $queues;
 }
 
 /**
- * Implements hook_cron().
  *
  * This will collect the selected number of emails to be sent at any one
  * time and perform this on cron run.
@@ -504,20 +525,24 @@ function anonymous_subscriptions_cron_queue_info(){
 function _anonymous_subscriptions_process_queue() {
   $max_to_send = variable_get('anonymous_subscriptions_max_to_send', 200);
   // search for expiration date interval
-  $queue = DrupalQueue::get(QUEUE_NAME);
+  $queue = DrupalQueue::get(ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME);
   $count = 0;
   while($item = $queue->claimItem()) {
+    $email = $item->data;
+    // Log some information in case we need to verify that an email was sent then send the email.
+    $log_text = t("Sending emails to !email with subject !subject", ['!email' => $email['email'], '!subject' => $email['subject']]);
+    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
+    $worked = _anonymous_subscriptions_send_email($email['email'], $email['subject'], $email['body']);
+    if($worked) {
+      $queue->deleteItem($item);
+    }
+    $count++;
     if($count > $max_to_send) {
       break;
     }
-    $email = $item->data;
-    // Log some information in case we need to verify that an email was sent then send the email.
-    watchdog(MODULE_NAME, "Sending email to [".$email['email']."] with subject [".$email['subject']."]", NULL, WATCHDOG_INFO, NULL);
-    _anonymous_subscriptions_send_email($email['email'], $email['subject'], $email['body']);
-
-    $queue->deleteItem($item);
-    $count++;
   }
+
+  return TRUE;
 }
 
 /**
@@ -528,6 +553,9 @@ function _anonymous_subscriptions_process_queue() {
  *  The Subject text to be sent in the email
  * @param $body
  *  The Body text to be sent in the email
+ *
+ * @return bool
+ * Returns true if the email was sent successfully.
  */
 function _anonymous_subscriptions_send_email($to, $subject, $body) {
   $message = drupal_mail('anonymous_subscriptions', 'key', $to, language_default(), array(), NULL, FALSE);
@@ -539,4 +567,5 @@ function _anonymous_subscriptions_send_email($to, $subject, $body) {
   $message = $system->format($message);
   // Send e-mail.
   $message['result'] = $system->mail($message);
+  return $message['result'];
 }

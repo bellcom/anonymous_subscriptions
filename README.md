@@ -21,7 +21,13 @@ INTRODUCTION
 ------------
 
 The Anonymous Subscriptions module allows a non-registered user to your site
-the ability to register for notifications when certain nodes are published.
+the ability to register for email notifications to certain pre-defined content types.
+
+These notifications are optional on the pre-defined content types with a flag 
+displayed as to whether to send e-mails or not.
+
+There is currently only one subscription list per site, future functionality will add 
+the ability for users to subscribe per content type, and/or per node.
 
 
 FEATURES
