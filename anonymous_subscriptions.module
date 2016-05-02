@@ -199,13 +199,23 @@ function anonymous_subscriptions_form_submit($form, &$form_state) {
     $subject = variable_get('site_name', '[site:name]').' - subscription';
     $text = t('To confirm your subscription please visit the following url !url', ['!url' => url("subscription/$code/$email/verify", ['absolute' => TRUE])]);
     $body = array($text);
-    _anonymous_subscriptions_send_email($email, $subject, $body);
+    $params = array(
+      'email' => $email,
+      'subject' => $subject,
+      'body' => $body
+    );
+    drupal_mail('anonymous_subscriptions', 'anonymous_subscriptions_key', $email, language_default(), $params);
   } else {
     drupal_set_message('You are now subscribed to updates.');
     $subject = variable_get('site_name', '[site:name]').' - subscription';
     $text = t("You are now subscribed to receive updates from !base_url.  To unsubscribe please visit !url", ['!base_url' => url($base_url),'!url' => url("subscription/$code/$email/unsubscribe", ['absolute' => TRUE])]);
     $body = array($text);
-    _anonymous_subscriptions_send_email($email, $subject, $body);
+    $params = array(
+      'email' => $email,
+      'subject' => $subject,
+      'body' => $body
+    );
+    drupal_mail('anonymous_subscriptions', 'anonymous_subscriptions_key', $email, language_default(), $params);
   }
 
   // Setting base URL back to the original as to ensure we get the correct url (after token replacing etc)
@@ -228,7 +238,7 @@ function _anonymous_subscriptions_remove_pending($nid) {
     $email = $item->data;
     if($email['nid'] == $nid) {
       // Log some information in case we need to verify that an email was sent then send the email.
-      $log_text = t("Removing email to !email with subject !subject", ['!email' => $email['email'], '!subject' => $email['subject']]);
+      $log_text = t("Removing email");
       watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
 
       $queue->deleteItem($item);
@@ -279,7 +289,12 @@ function _anonymous_subscriptions_verify_email($code, $email) {
     $subject = variable_get('site_name', '[site:name]').' - subscription';
     $text = t("You are now subscribed to receive updates from !base_url.  To unsubscribe please visit !url", ['!base_url' => url($base_url),'!url' => url("subscription/$code/$email/unsubscribe", ['absolute' => TRUE])]);
     $body = array($text);
-    _anonymous_subscriptions_send_email($email, $subject, $body);
+    $params = array(
+      'email' => $email,
+      'subject' => $subject,
+      'body' => $body
+    );
+    drupal_mail('anonymous_subscriptions', 'anonymous_subscriptions_key', $email, language_default(), $params);
   }
 
   // Setting base URL back to the original as to ensure we get the correct url (after token replacing etc)
@@ -494,6 +509,9 @@ function _anonymous_subscriptions_add_pending_emails($node) {
     );
 
     $queue->createItem($fields);
+
+    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, 'Adding to queue email', NULL, WATCHDOG_INFO);
+
     $count++;
   }
 
@@ -523,6 +541,7 @@ function anonymous_subscriptions_cron_queue_info(){
  * time and perform this on cron run.
  */
 function _anonymous_subscriptions_process_queue() {
+  watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, "Kick off cron queue", NULL, WATCHDOG_INFO);
   $max_to_send = variable_get('anonymous_subscriptions_max_to_send', 200);
   // search for expiration date interval
   $queue = DrupalQueue::get(ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME);
@@ -530,12 +549,12 @@ function _anonymous_subscriptions_process_queue() {
   while($item = $queue->claimItem()) {
     $email = $item->data;
     // Log some information in case we need to verify that an email was sent then send the email.
-    $log_text = t("Sending emails to !email with subject !subject", ['!email' => $email['email'], '!subject' => $email['subject']]);
-    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
-    $worked = _anonymous_subscriptions_send_email($email['email'], $email['subject'], $email['body']);
-    if($worked) {
-      $queue->deleteItem($item);
-    }
+    $log_text = t("Sending emails");
+    watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO);
+
+    drupal_mail('anonymous_subscriptions', 'anonymous_subscriptions_key', $email['email'], language_default(), $email);
+
+    $queue->deleteItem($item);
     $count++;
     if($count > $max_to_send) {
       break;
@@ -546,26 +565,15 @@ function _anonymous_subscriptions_process_queue() {
 }
 
 /**
- * Function used to send emails
- * @param $to
- *  The email address to send the email to
- * @param $subject
- *  The Subject text to be sent in the email
- * @param $body
- *  The Body text to be sent in the email
- *
- * @return bool
- * Returns true if the email was sent successfully.
+ * Implements hook_mail()
  */
-function _anonymous_subscriptions_send_email($to, $subject, $body) {
-  $message = drupal_mail('anonymous_subscriptions', 'key', $to, language_default(), array(), NULL, FALSE);
-  $message['subject'] = $subject;
-  $message['body'] = $body;
-  // Retrieve the responsible implementation for this message.
-  $system = drupal_mail_system('anonymous_subscriptions', 'key');
-  // Format the message body.
-  $message = $system->format($message);
-  // Send e-mail.
-  $message['result'] = $system->mail($message);
-  return $message['result'];
+function anonymous_subscriptions_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'anonymous_subscriptions_key':
+      // Set headers etc
+      $message['to'] = $params['email'];
+      $message['subject'] = $params['subject'];
+      $message['body'] = $params['body'];
+      break;
+  }
 }
