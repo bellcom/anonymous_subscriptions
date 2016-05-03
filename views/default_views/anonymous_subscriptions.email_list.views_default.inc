@@ -108,7 +108,7 @@ $handler->display->display_options['fields']['nothing']['id'] = 'nothing';
 $handler->display->display_options['fields']['nothing']['table'] = 'views';
 $handler->display->display_options['fields']['nothing']['field'] = 'nothing';
 $handler->display->display_options['fields']['nothing']['label'] = 'Operations';
-$handler->display->display_options['fields']['nothing']['alter']['text'] = '<a href="/subscription/[email]/[code]/verify">Verify</a> | <a href="/subscription/[email]/[code]/unsubscribe">Unsubscribe</a>';
+$handler->display->display_options['fields']['nothing']['alter']['text'] = '<a href="/subscription/[eid]/[email]/[code]/verify">Verify</a> | <a href="/subscription/[eid]/unsubscribe">Unsubscribe</a>';
 $handler->display->display_options['fields']['nothing']['hide_empty'] = TRUE;
 $handler->display->display_options['fields']['nothing']['hide_alter_empty'] = TRUE;
 
@@ -121,6 +121,7 @@ $handler->display->display_options['menu']['weight'] = '0';
 $handler->display->display_options['menu']['name'] = 'management';
 $handler->display->display_options['menu']['context'] = 0;
 $handler->display->display_options['menu']['context_only_inline'] = 0;
+
 
 
 // --- Paste exported view above ---
