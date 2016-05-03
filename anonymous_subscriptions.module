@@ -17,6 +17,7 @@ define('ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME', 'anonymous_subscription');
 define('ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME', 'anonymous_subscriptions_queue');
 define('ANONYMOUS_SUBSCRIPTIONS_VALID_TYPES', 'anonymous_subscriptions_node_types');
 
+require('includes/anonymous_subscriptions.block.inc');
 /**
  * Implements hook_permission().
  */
@@ -55,7 +56,7 @@ function anonymous_subscriptions_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('anonymous_subscriptions_settings'),
     'access arguments' => array('administer anonymous_subscriptions'),
-    'file' => 'anonymous_subscriptions.admin.inc',
+    'file' => 'includes/anonymous_subscriptions.admin.inc',
   );
 
   $items['admin/config/content/anonymous_subscriptions/settings'] = array(
@@ -96,35 +97,6 @@ function _anonymous_subscriptions_token_check() {
   }
 
   return TRUE;
-}
-
-/**
- * Implements hook_block_info().
- */
-function anonymous_subscriptions_block_info() {
-  $blocks['anonymous_subscriptions_block'] = array(
-    'info' => t('Anonymous subscription email block'),
-    'cache' => DRUPAL_CACHE_PER_ROLE,
-  );
-  return $blocks;
-}
-
-/**
- * Implements hook_block_view().
- */
-function anonymous_subscriptions_block_view($delta = '') {
-  switch ($delta) {
-    case 'anonymous_subscriptions_block':
-      $block['subject'] = t('Email');
-      if (user_access('access content')) {
-        // Retrieve and process data here.
-        $the_form = drupal_get_form('anonymous_subscriptions_form');
-        $block['content'] = drupal_render($the_form);
-
-      }
-
-    return $block;
-  }
 }
 
 /**
@@ -582,7 +554,7 @@ function anonymous_subscriptions_theme() {
   $theme['anonymous_subscriptions_message'] = array(
     'variables' => array('renderer' => NULL, 'region' => NULL, 'content_type' => NULL),
     'path' => drupal_get_path('module', 'anonymous_subscriptions') . '/templates',
-    'file' => '../includes/message.inc',
+    'file' => '../includes/anonymous_subscriptions.message.inc',
     'template' => 'anonymous-subscriptions-message',
   );
 
