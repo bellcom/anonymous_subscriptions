@@ -428,7 +428,7 @@ function _anonymous_subscriptions_add_pending_emails($node) {
 function anonymous_subscriptions_cron_queue_info(){
   $queues[ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME] = array(
     'worker callback' => '_anonymous_subscriptions_process_queue',
-    'time' => 60,
+    'time' => variable_get('anonymous_subscriptions_max_to_send', 60),
   );
   return $queues;
 }
