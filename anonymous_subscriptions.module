@@ -64,7 +64,7 @@ function anonymous_subscriptions_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
-  $items['subscription/%/remove'] = array(
+  $items['subscription/%node/remove'] = array(
     'page callback' => '_anonymous_subscriptions_remove_pending',
     'page arguments' => array(1),
     'access callback' => '_anonymous_subscriptions_token_check',
@@ -236,16 +236,16 @@ function anonymous_subscriptions_form_submit($form, &$form_state) {
  * Function called to remove pending emails from the
  * queue.
  *
- * @param $nid
- * The nid to remove pending emails for
+ * @param $node
+ * The node associated with the removal of pending emails.
  *
  */
-function _anonymous_subscriptions_remove_pending($nid) {
+function _anonymous_subscriptions_remove_pending($node) {
   $queue = DrupalQueue::get(ANONYMOUS_SUBSCRIPTIONS_QUEUE_NAME);
   $count = 0;
   while($item = $queue->claimItem()) {
     $email = $item->data;
-    if($email['nid'] == $nid) {
+    if($email['nid'] == $node->nid) {
       // Log some information in case we need to verify that an email was sent then send the email.
       $log_text = t("Removing email to !email with subject !subject", ['!email' => $email['email'], '!subject' => $email['subject']]);
       watchdog(ANONYMOUS_SUBSCRIPTIONS_MODULE_NAME, $log_text, NULL, WATCHDOG_INFO, NULL);
@@ -256,7 +256,7 @@ function _anonymous_subscriptions_remove_pending($nid) {
   }
 
   drupal_set_message("Removed $count pending subscriptions.");
-  drupal_goto("/node/$nid");
+  drupal_goto("/node/$node->nid");
 }
 
 /**
