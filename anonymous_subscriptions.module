@@ -270,6 +270,11 @@ function anonymous_subscriptions_form_workbench_moderation_moderate_form_alter(&
       '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
       '#access' => user_access('alter anonymous_subscriptions') || user_access('administer anonymous_subscriptions'),
     );
+
+    $form['#attached']['js'] = array(
+      drupal_get_path('module', 'anonymous_subscriptions') . '/js/anonymous_subscriptions.js',
+    );
+
     $form['#submit'][] = 'anonymous_subscriptions_workbench_moderation_form_submit';
   }
 }

@@ -1,22 +1,6 @@
 ANONYMOUS SUBSCRIPTIONS
 ----------------
 
-CONTENTS OF THIS FILE
----------------------
-
- * Introduction
- * Features
- * Implementation
- * Integration (with other modules)
- * Installation and configuration
- * Useful Resources
- * Troubleshooting (known issues)
- * Similar modules
- * Developers: Extending the module
- * Future developments
- * Contributions are welcome!!
- * Credits / Contact
-
 
 INTRODUCTION
 ------------
@@ -63,9 +47,6 @@ module.
 INSTALLATION AND CONFIGURATION
 ------------------------------
 
-0 - Prerequisites:
-N/A
-
 1 - Download the module and copy it into your contributed modules folder:
 [for example, your_drupal_path/sites/all/modules] and enable it
 from the modules administration/management page.
@@ -75,12 +56,6 @@ After successful installation, browse to the Anonymous Subscriptions configurati
 page, and configure as per how you would like it to operate.
 After this visit the blocks page (admin/structure/blocks) and configure the
 Anonymous Subscriptions email block on your site. Your ready to go!
-
-
-USEFUL RESOURCES
-----------------
-
-N/A
 
 
 TROUBLESHOOTING

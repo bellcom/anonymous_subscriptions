@@ -41,6 +41,7 @@ function anonymous_subscriptions_form() {
     '#default_value' => '',
     '#required' => TRUE,
   );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
