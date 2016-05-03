@@ -12,6 +12,8 @@ function anonymous_subscriptions_install() {
   variable_set('anonymous_subscriptions_subject_text', 'New content added to [site:name]');
   variable_set('anonymous_subscriptions_body_text', "A new post has been made to [site:name].\nPlease visit [node:url] to see this new post!");
   variable_set('anonymous_subscriptions_site_url', '[site:url]');
+  variable_set('anonymous_subscriptions_limit_window', 300);
+  variable_set('anonymous_subscriptions_ip_limit', 20);
 }
 
 /**
@@ -25,6 +27,8 @@ function anonymous_subscriptions_uninstall() {
   variable_del('anonymous_subscriptions_subject_text');
   variable_del('anonymous_subscriptions_body_text');
   variable_del('anonymous_subscriptions_site_url');
+  variable_del('anonymous_subscriptions_limit_window');
+  variable_del('anonymous_subscriptions_ip_limit');
 }
 
 /**

@@ -32,6 +32,20 @@ function anonymous_subscriptions_settings() {
     '#options' => array(30 => '30 seconds', 60 => '1 minute', 120 => '2 minutes'),
   );
 
+  $form['subscription_fieldset']['anonymous_subscriptions_limit_window'] = array(
+    '#type' => 'select',
+    '#title' => t('How long to block flood attempts.'),
+    '#default_value' => variable_get('anonymous_subscriptions_limit_window', 300),
+    '#options' => array(60 => '1 minute', 300 => '5 minutes', 600 => '10 minutes'),
+  );
+
+  $form['subscription_fieldset']['anonymous_subscriptions_ip_limit'] = array(
+    '#type' => 'select',
+    '#title' => t('How many attempts before blocking a user from a single IP.'),
+    '#default_value' => variable_get('anonymous_subscriptions_ip_limit', 20),
+    '#options' => array(5 => '5 attempts', 10 => '10 attempts', 20 => '20 attempts'),
+  );
+
   $form['email_fieldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Email settings'),
