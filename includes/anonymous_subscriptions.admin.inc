@@ -23,6 +23,7 @@ function anonymous_subscriptions_settings() {
     '#type' => 'checkbox',
     '#title' => t('Send by default'),
     '#default_value' => variable_get('anonymous_subscriptions_send_default', FALSE),
+    '#description' => 'Tick this is you want the default option to be send emails.',
   );
 
   $form['subscription_fieldset']['anonymous_subscriptions_max_to_send'] = array(
