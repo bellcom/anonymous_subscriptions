@@ -17,7 +17,7 @@ function anonymous_subscriptions_block_info() {
 function anonymous_subscriptions_block_view($delta = '') {
   switch ($delta) {
     case 'anonymous_subscriptions_block':
-      $block['subject'] = t('Email');
+      $block['subject'] = t('Subscribe');
       if (user_access('access content')) {
         // Retrieve and process data here.
         $the_form = drupal_get_form('anonymous_subscriptions_form');
@@ -40,11 +40,12 @@ function anonymous_subscriptions_form() {
     '#title' => t('Email'),
     '#default_value' => '',
     '#required' => TRUE,
+    '#size' => 15,
   );
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Subscribe'),
   );
   $form['#validate'][] = 'anonymous_subscriptions_form_validate';
   $form['#submit'][] = 'anonymous_subscriptions_form_submit';
@@ -107,7 +108,7 @@ function anonymous_subscriptions_form_submit($form, &$form_state) {
 
 
   if ($verification_required) {
-    drupal_set_message('You will need to verify your email address.');
+    drupal_set_message('Thanks for subscribing, in order to receive updates, you will need to verify your email address by clicking on a link in an email we just sent you.');
     $subject = variable_get('site_name', '[site:name]') . ' - subscription';
     $text = t('To confirm your subscription please visit the following url !url', ['!url' => url("subscription/$code/$email/verify", ['absolute' => TRUE])]);
     $body = array($text);

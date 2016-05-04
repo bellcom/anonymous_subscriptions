@@ -497,7 +497,11 @@ function _anonymous_subscriptions_add_pending_emails($node) {
   // Setting base URL back to the original as to ensure we get the correct url (after token replacing etc)
   // for our $site_url variable, e.g. if node:url is used we want the correct base_url
   $base_url = $original_base_url;
-  $message = t("Sending emails to $count subscriptions. <a href='!url'>Click here to remove pending emails</a>", ['!url' => "/subscription/$node->nid/remove?tok=".drupal_get_token()]);
+  if($count > 0) {
+    $message = t("Queuing $count emails to be sent to your subscribers. <a href='!url'>Click here to remove pending emails</a>.", ['!url' => "/subscription/$node->nid/remove?tok=".drupal_get_token()]);
+  } else {
+    $message = t("No emails to be sent, there are no subscribers.");
+  }
   drupal_set_message($message);
 
   //_anonymous_subscriptions_process_queue();
