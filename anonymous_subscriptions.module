@@ -61,8 +61,19 @@ function anonymous_subscriptions_menu() {
 
   $items['admin/config/content/anonymous_subscriptions/settings'] = array(
     'title' => t('Settings'),
-    'weight' => -10,
+    'weight' => -11,
     'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/config/content/anonymous_subscriptions/import'] = array(
+    'title' => t('Import'),
+    'description' => t('Import bulk emails for subscriptions'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('anonymous_subscriptions_import'),
+    'access arguments' => array('administer anonymous_subscriptions'),
+    'file' => 'includes/anonymous_subscriptions.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10
   );
 
   $items['subscription/%node/remove'] = array(
