@@ -595,3 +595,14 @@ function anonymous_subscriptions_views_default_views() {
   return $views;
 }
 
+/**
+ * Implements hook_module_implements_alter().
+ */
+function anonymous_subscriptions_module_implements_alter(&$implementations, $hook) {
+    if ($hook == 'node_insert') {
+      // Move anonymous_subscriptions_node_insert() to the end of the list.
+      $group = $implementations['anonymous_subscriptions'];
+      unset($implementations['anonymous_subscriptions']);
+      $implementations['anonymous_subscriptions'] = $group;
+  }
+}
