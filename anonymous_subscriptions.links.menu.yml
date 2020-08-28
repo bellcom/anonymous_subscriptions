@@ -1,0 +1,5 @@
+anonymous_subscriptions.settings:
+  title: 'Anonymous subscriptions'
+  parent: system.admin_config_content
+  description: 'Subscription integration settings and configuration.'
+  route_name: anonymous_subscriptions.settings_form

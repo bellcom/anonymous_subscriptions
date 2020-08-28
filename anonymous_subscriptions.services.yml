@@ -1,0 +1,7 @@
+services:
+  logger.channel.anonymous_subscriptions:
+    parent: logger.channel_base
+    arguments: ['anonymous_subscriptions']
+  anonymous_subscriptions.default:
+    class: Drupal\anonymous_subscriptions\DefaultService
+    arguments: ['@config.factory', '@plugin.manager.mail', '@language_manager', '@logger.channel.anonymous_subscriptions', '@token', '@tempstore.private', '@queue', '@entity_type.manager']

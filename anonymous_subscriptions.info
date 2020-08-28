@@ -1,9 +1,0 @@
-name = Anonymous Subscriptions
-description = Provide Subscription functionality to anonymous users
-core = 7.x
-
-; Information added by Drupal.org packaging script on 2015-03-04
-version = "7.x-1.0"
-core = "7.x"
-project = "anonymous_subscriptions"
-
