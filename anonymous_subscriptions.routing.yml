@@ -1,0 +1,69 @@
+anonymous_subscriptions.settings_form:
+  path: '/admin/config/content/anonymous_subscriptions'
+  defaults:
+    _form: '\Drupal\anonymous_subscriptions\Form\SettingsForm'
+    _title: 'Anonymous subscriptions settings'
+  requirements:
+    _permission: 'administer anonymous_subscriptions'
+
+anonymous_subscriptions.subscribe_form:
+  path: '/subscribe'
+  defaults:
+    _form: '\Drupal\anonymous_subscriptions\Form\SubscribeForm'
+    _title_callback: '\Drupal\anonymous_subscriptions\Form\SubscribeForm::getTitle'
+  requirements:
+    _permission: 'access content'
+
+anonymous_subscriptions.subscribe_form_type:
+  path: '/subscribe/{type}'
+  defaults:
+    _form: '\Drupal\anonymous_subscriptions\Form\SubscribeForm'
+    _title_callback: '\Drupal\anonymous_subscriptions\Form\SubscribeForm::getTitle'
+  options:
+    parameters:
+      type:
+        type: string
+  requirements:
+    _permission: 'access content'
+
+anonymous_subscriptions.verify_subscription:
+  path: '/subscription/{subscription}/{code}/confirm'
+  options:
+    parameters:
+      subscription:
+        type: entity:anonymous_subscription
+      code:
+        type: string
+  defaults:
+    _controller: '\Drupal\anonymous_subscriptions\Controller\SubscriptionController::verify'
+    _title_callback: '\Drupal\anonymous_subscriptions\Controller\SubscriptionController::verifyTitle'
+  requirements:
+    _permission: 'access content'
+
+anonymous_subscriptions.cancel_subscription:
+  path: '/subscription/{subscription}/{code}/unsubscribe'
+  options:
+    parameters:
+      subscription:
+        type: entity:anonymous_subscription
+      code:
+        type: string
+  defaults:
+    _form: 'Drupal\anonymous_subscriptions\Form\SubscriptionCancelForm'
+    _title_callback: 'Drupal\anonymous_subscriptions\Form\SubscriptionCancelForm::getTitle'
+  requirements:
+    _permission: 'access content'
+
+anonymous_subscriptions.cancel_all_subscriptions:
+  path: '/subscription/{subscription}/{code}/unsubscribe_all'
+  options:
+    parameters:
+      subscription:
+        type: entity:anonymous_subscription
+      code:
+        type: string
+  defaults:
+    _form: 'Drupal\anonymous_subscriptions\Form\SubscriptionCancelAllForm'
+    _title_callback: 'Drupal\anonymous_subscriptions\Form\SubscriptionCancelAllForm::getTitle'
+  requirements:
+    _permission: 'access content'

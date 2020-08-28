@@ -1,79 +1,15 @@
 <?php
 
-
 /**
- * Implements hook_install().
+ * @file
+ * Install/update/uninstall functions for the anonymous subscription module.
  */
-function anonymous_subscriptions_install() {
-  variable_set('anonymous_subscriptions_verify', TRUE);
-  variable_set('anonymous_subscriptions_max_to_send', 60);
-  variable_set('anonymous_subscriptions_send_default', FALSE);
-  variable_set('anonymous_subscriptions_node_types', array());
-  variable_set('anonymous_subscriptions_subject_text', 'New content added to [site:name]');
-  variable_set('anonymous_subscriptions_body_text', "A new post has been made to [site:name].\nPlease visit [node:url] to see this new post!");
-  variable_set('anonymous_subscriptions_site_url', '[site:url]');
-  variable_set('anonymous_subscriptions_limit_window', 300);
-  variable_set('anonymous_subscriptions_ip_limit', 20);
-}
+
+use Drupal\anonymous_subscriptions\Form\SettingsForm;
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function anonymous_subscriptions_uninstall() {
-  variable_del('anonymous_subscriptions_verify');
-  variable_del('anonymous_subscriptions_max_to_send');
-  variable_del('anonymous_subscriptions_send_default');
-  variable_del('anonymous_subscriptions_node_types');
-  variable_del('anonymous_subscriptions_subject_text');
-  variable_del('anonymous_subscriptions_body_text');
-  variable_del('anonymous_subscriptions_site_url');
-  variable_del('anonymous_subscriptions_limit_window');
-  variable_del('anonymous_subscriptions_ip_limit');
-}
-
-/**
- * Implementation of hook_enable().
- */
-function anonymous_subscriptions_enable() {
-  if(db_table_exists('anonymous_subscriptions_emails') == FALSE) {
-    drupal_install_schema('anonymous_subscriptions');
-  }
-}
-
-/**
- * Implementation of hook_schema().
- */
-function anonymous_subscriptions_schema() {
-  // Schema for the list of anonymous emails
-  $schema['anonymous_subscriptions_emails'] = array(
-    'description' => t('Stores email addresses for subscriptions.'),
-    'fields' => array(
-      'eid' => array(
-        'description' => 'The primary identifier for a email.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE),
-      'email' => array(
-        'description' => 'The email address of the user.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE),
-      'verified' => array(
-        'description' => 'If they are verified.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0),
-      'code' => array(
-        'description' => 'Code to verify and unsubscribe',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        ),
-    ),
-    'primary key' => array('eid'),
-    'unique keys' => array(
-      'email' => array('email'),
-    ),
-  );
-return $schema;
+  Drupal::configFactory()->getEditable(SettingsForm::$configName)->delete();
 }

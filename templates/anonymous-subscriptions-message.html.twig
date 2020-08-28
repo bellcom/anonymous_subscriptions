@@ -1,0 +1,21 @@
+{#
+/**
+ * @file
+ * Anonymous subscription messages template.
+ */
+#}
+<div class="anonymous-subscription-messages clearfix">
+  {% if title %}
+    <h2>{{ title }}</h2>
+  {% endif %}
+  {% if message %}
+  <div class="anonymous-subscription-message">
+    {{ message }}
+  </div>
+  {% endif %}
+  {% if link %}
+  <div class="anonymous-subscription-url">
+    {{ link }}
+  </div>
+  {% endif %}
+</div>

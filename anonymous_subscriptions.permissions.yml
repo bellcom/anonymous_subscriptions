@@ -1,0 +1,6 @@
+administer anonymous_subscriptions:
+  title: 'Administer subscription Settings'
+  description: 'Configure the subscription settings'
+alter anonymous_subscriptions:
+  title: 'Change subscription settings on node form'
+  description: 'Change subscription settings on node form'
