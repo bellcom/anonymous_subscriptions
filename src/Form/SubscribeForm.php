@@ -170,7 +170,10 @@ class SubscribeForm extends FormBase {
 
     $query = \Drupal::entityQuery('anonymous_subscription')
       ->condition('email', $email);
-    if (!empty($type)) {
+    if (empty($type)) {
+      $query->notExists('type');
+    }
+    else {
       $query->condition('type', $type);
     }
     $ids = $query->execute();
