@@ -149,7 +149,7 @@ class DefaultService {
     $this->sendMail([
       'to' => $subscription->email->value,
       'subject' => $subject,
-      'body' => $body,
+      'body' => (string) $body,
     ]);
   }
 
@@ -183,7 +183,7 @@ class DefaultService {
     $this->sendMail([
       'to' => $subscription->email->value,
       'subject' => $subject,
-      'body' => $body,
+      'body' => (string) $body,
     ]);
   }
 
