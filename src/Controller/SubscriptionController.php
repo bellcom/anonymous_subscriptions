@@ -67,6 +67,7 @@ class SubscriptionController extends ControllerBase {
       '#theme' => 'anonymous_subscriptions_message',
       '#attributes' => ['class' => ['text']],
       '#message' => $status,
+      '#subscription' => $subscription,
       '#link' => Link::fromTextAndUrl($this->t('Click here to return to homepage'), Url::fromRoute('<front>')),
     ];
   }
