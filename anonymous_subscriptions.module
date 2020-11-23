@@ -40,6 +40,7 @@ function anonymous_subscriptions_theme() {
         'title' => FALSE,
         'message' => FALSE,
         'link' => FALSE,
+        'subscription' => FALSE,
       ],
       'template' => 'anonymous-subscriptions-message',
     ],
