@@ -73,15 +73,15 @@ function anonymous_subscriptions_update_8903() {
   if ($schema->fieldExists($table_name, 'type')) {
     // Storing the existing values from type field.
     $type_values = $database->select($table_name)
-      ->fields($table_name, ['type'])
+      ->fields($table_name, ['id', 'type'])
       ->execute()
-      ->fetchAllKeyed();
+      ->fetchAll();
 
     // Updating values for entity_bundle field with values from type field.
-    foreach ($type_values as $id => $value) {
+    foreach ($type_values as $row) {
       $database->update($table_name)
-        ->fields(['entity_bundle' => $value])
-        ->condition('id', $id)
+        ->fields(['entity_bundle' => $row->type])
+        ->condition('id', $row->id)
         ->execute();
     }
 
