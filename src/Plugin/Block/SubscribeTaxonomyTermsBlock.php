@@ -2,6 +2,7 @@
 
 namespace Drupal\anonymous_subscriptions\Plugin\Block;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\taxonomy\Entity\Vocabulary;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -46,6 +47,7 @@ class SubscribeTaxonomyTermsBlock extends SubscribeBlockBase {
   public function defaultConfiguration() {
     return [
       'vid',
+      'description_top',
     ] + parent::defaultConfiguration();
   }
 
@@ -71,6 +73,13 @@ class SubscribeTaxonomyTermsBlock extends SubscribeBlockBase {
       '#default_value' => empty($this->configuration['vid']) ? NULL : $this->configuration['vid'],
     ];
 
+    $form['description_top'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Description top text'),
+      '#description' => $this->t('This text will appear right after block title.'),
+      '#default_value' => $this->configuration['description_top'],
+    ];
+
     return $form;
   }
 
@@ -79,6 +88,7 @@ class SubscribeTaxonomyTermsBlock extends SubscribeBlockBase {
    */
   public function blockSubmit($form, FormStateInterface $form_state) {
     $this->configuration['vid'] = $form_state->getValue('vid');
+    $this->configuration['description_top'] = $form_state->getValue('description_top');
   }
 
   /**
@@ -93,6 +103,10 @@ class SubscribeTaxonomyTermsBlock extends SubscribeBlockBase {
       return $build;
     }
 
+    $build['description_top'] = [
+      '#markup' => '<p class="description-top">' . Html::escape($this->configuration['description_top']) . '</p>',
+      '#weight' => -10,
+    ];
     $form = $this->formBuilder->getForm('\Drupal\anonymous_subscriptions\Form\SubscribeTaxonomyTermsForm', $vid);
     $build['form'][] = $form;
     return $build;
