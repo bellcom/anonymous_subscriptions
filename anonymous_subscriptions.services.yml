@@ -4,4 +4,4 @@ services:
     arguments: ['anonymous_subscriptions']
   anonymous_subscriptions.default:
     class: Drupal\anonymous_subscriptions\DefaultService
-    arguments: ['@config.factory', '@plugin.manager.mail', '@language_manager', '@logger.channel.anonymous_subscriptions', '@token', '@tempstore.private', '@queue', '@entity_type.manager']
+    arguments: ['@config.factory', '@plugin.manager.mail', '@language_manager', '@logger.channel.anonymous_subscriptions', '@token', '@tempstore.private', '@queue', '@entity_type.manager', '@entity_field.manager']

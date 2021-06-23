@@ -9,3 +9,4 @@ anonymous_subscriptions_verify_body_text: "You have requested subscription to ge
 anonymous_subscriptions_send_default: 0
 anonymous_subscriptions_sender: ''
 anonymous_subscriptions_verify: 1
+anonymous_subscriptions_taxonomy_terms_depth: ''

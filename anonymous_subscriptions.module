@@ -12,6 +12,8 @@
 
 use Drupal\Core\Url;
 use Drupal\anonymous_subscriptions\Form\SettingsForm;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
 
 /**
  * Implements hook_help().
@@ -124,5 +126,55 @@ function anonymous_subscriptions_module_implements_alter(&$implementations, $hoo
     $group = $implementations['anonymous_subscriptions'];
     unset($implementations['anonymous_subscriptions']);
     $implementations['anonymous_subscriptions'] = $group;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function anonymous_subscriptions_form_field_config_edit_form_alter(array &$form, FormStateInterface $form_state) {
+  /** @var \Drupal\field\FieldConfigInterface $field */
+  $field = $form_state->getFormObject()->getEntity();
+  if ($field->getTargetEntityTypeId() != 'node'
+    || $field->getType() != 'entity_reference'
+    || $field->getSetting('handler') != 'default:taxonomy_term') {
+    return;
+  }
+
+  $config = \Drupal::config(SettingsForm::$configName);
+  $valid_types = $config->get('anonymous_subscriptions_node_types') ?: [];
+  $form['anonymous_subscriptions'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Enable anonymous subscription for this reference'),
+    '#default_value' => $field->getThirdPartySetting('anonymous_subscriptions', 'enabled', FALSE),
+    '#disabled' => empty($valid_types[$field->getTargetBundle()]),
+    '#description' => t('Be sure you have enabled content type for using anonymous subscriptions on @settings_link', [
+      '@settings_link' => Link::fromTextAndUrl(t('settings page'), Url::fromRoute('anonymous_subscriptions.settings_form', ['destination' => Drupal::service('path.current')->getPath()]))->toString(),
+    ]),
+    '#weight' => -1,
+  ];
+  $form['actions']['submit']['#submit'][] = 'anonymous_subscriptions_field_config_edit_form_submit';
+}
+
+/**
+ * Form submission handler for "field_config_edit_form" alter.
+ *
+ * @param array $form
+ *   The form array.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   The form state.
+ */
+function anonymous_subscriptions_field_config_edit_form_submit(array $form, FormStateInterface $form_state) {
+  $field = $form_state->getFormObject()->getEntity();
+  $form_fields = &$form_state->getValues();
+
+  // If the anonymous_subscription option is checked, update settings.
+  if ($form_fields['anonymous_subscriptions']) {
+    $field->setThirdPartySetting('anonymous_subscriptions', 'enabled', TRUE);
+    $field->save();
+  }
+  else {
+    $field->unsetThirdPartySetting('anonymous_subscriptions', 'enabled');
+    $field->save();
   }
 }

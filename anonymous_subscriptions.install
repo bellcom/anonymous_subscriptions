@@ -6,10 +6,97 @@
  */
 
 use Drupal\anonymous_subscriptions\Form\SettingsForm;
+use Drupal\Core\Field\BaseFieldDefinition;
 
 /**
  * Implements hook_uninstall().
  */
 function anonymous_subscriptions_uninstall() {
   Drupal::configFactory()->getEditable(SettingsForm::$configName)->delete();
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Install missing field entity_id.
+ */
+function anonymous_subscriptions_update_8901() {
+  $field_storage_definition = BaseFieldDefinition::create('integer')
+    ->setLabel(t('Subscribed entity id'))
+    ->setDescription(t('The entity id for subscription.'));
+
+  \Drupal::entityDefinitionUpdateManager()
+    ->installFieldStorageDefinition('entity_id', 'anonymous_subscription', 'anonymous_subscription', $field_storage_definition);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Marking all existing subscriptions as "entity_type = node".
+ */
+function anonymous_subscriptions_update_8902() {
+  \Drupal::database()->update('anonymous_subscription')
+    ->fields(['entity_type' => 'node'])
+    ->condition('entity_type', NULL, 'IS NULL')
+    ->execute();
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Changing column type to entity_bundle.
+ */
+function anonymous_subscriptions_update_8903() {
+  $table_name = 'anonymous_subscription';
+  $database = \Drupal::database();
+
+  /** @var \Drupal\Core\Database\Schema $schema */
+  $schema = $database->schema();
+  $messenger = Drupal::messenger();
+
+  if ($schema->fieldExists($table_name, 'entity_bundle')) {
+    $messenger->addMessage(t('Column entity_bundle already exist in table @table', ['@table' => $table_name]));
+  }
+  else {
+    // Create a new BaseFieldDefinition for entity_bundle feild.
+    $field_storage_definition = BaseFieldDefinition::create('string')
+      ->setLabel(t('Subscribed entity bundle'))
+      ->setDescription(t('The entity bundle for subscription.'))
+      ->setSettings([
+        'max_length' => 255,
+      ]);
+
+    \Drupal::entityDefinitionUpdateManager()
+      ->installFieldStorageDefinition('entity_bundle', 'anonymous_subscription', 'anonymous_subscription', $field_storage_definition);
+  }
+
+  if ($schema->fieldExists($table_name, 'type')) {
+    // Storing the existing values from type field.
+    $type_values = $database->select($table_name)
+      ->fields($table_name, ['type'])
+      ->execute()
+      ->fetchAllKeyed();
+
+    // Updating values for entity_bundle field with values from type field.
+    foreach ($type_values as $id => $value) {
+      $database->update($table_name)
+        ->fields(['entity_bundle' => $value])
+        ->condition('id', $id)
+        ->execute();
+    }
+
+    // Clear out the values (required to uninstall a field).
+    $database->update($table_name)
+      ->fields(['type' => NULL])
+      ->execute();
+
+    // Uninstalling type field.
+    $definition_manager = \Drupal::entityDefinitionUpdateManager();
+    $field_storage_definition = $definition_manager->getFieldStorageDefinition('type', 'anonymous_subscription');
+    $definition_manager->uninstallFieldStorageDefinition($field_storage_definition);
+  }
+  else {
+    Drupal::messenger()->addMessage(t('Column type does not exist in table @table', ['@table' => $table_name]));
+  }
+
 }

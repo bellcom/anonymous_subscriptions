@@ -92,17 +92,9 @@ class SubscriptionCancelForm extends ConfirmFormBase {
     $url = Url::fromRoute('<front>');
     $response = new RedirectResponse($url->toString());
     $response->send();
-    $message = $this->t('Your email was removed from subscription for updates on all content.');
-    if ($this->subscription->type->value) {
-      $type_label = $this->entityTypeManager
-        ->getStorage('node_type')
-        ->load($this->subscription->type->value)
-        ->label();
-      $message = $this->t('Your email was removed from subscription for updates on content type @type', [
-        '@type' => $type_label,
-      ]);
-    }
-    $this->messenger()->addStatus($message);
+    $this->messenger()->addStatus($this->t('Your email was removed from subscription for updates on @reason_text', [
+      '@reason_text' => $this->subscriptionService->getSubscriptionReasonText($this->subscription),
+    ]));
   }
 
   /**
@@ -130,17 +122,9 @@ class SubscriptionCancelForm extends ConfirmFormBase {
    * {@inheritdoc}
    */
   public function getDescription() {
-    $description = $this->t('Do you want to cancel your subscription on all content?');
-    if ($this->subscription->type->value) {
-      $type_label = $this->entityTypeManager
-        ->getStorage('node_type')
-        ->load($this->subscription->type->value)
-        ->label();
-      $description = $this->t('Do you want to cancel your subscription on content type @type?', [
-        '@type' => $type_label,
-      ]);
-    }
-    return $description;
+    return $this->t('Do you want to cancel your subscription on @reason_text?', [
+      '@reason_text' => $this->subscriptionService->getSubscriptionReasonText($this->subscription),
+    ]);
   }
 
   /**

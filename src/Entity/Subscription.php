@@ -57,13 +57,18 @@ class Subscription extends ContentEntityBase implements ContentEntityInterface {
         'max_length' => 255,
       ]);
 
-    // Entity node type field.
-    $fields['type'] = BaseFieldDefinition::create('string')
-      ->setLabel(t('Subscribed node type'))
-      ->setDescription(t('The node type for subscription.'))
+    // Entity entity bundle field.
+    $fields['entity_bundle'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Subscribed entity bundle'))
+      ->setDescription(t('The entity bundle for subscription.'))
       ->setSettings([
         'max_length' => 255,
       ]);
+
+    // Entity id field.
+    $fields['entity_id'] = BaseFieldDefinition::create('integer')
+      ->setLabel(t('Subscribed entity id'))
+      ->setDescription(t('The entity id for subscription.'));
 
     // Token field for the subscription.
     $fields['code'] = BaseFieldDefinition::create('string')

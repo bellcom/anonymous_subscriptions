@@ -2,82 +2,15 @@
 
 namespace Drupal\anonymous_subscriptions\Form;
 
-use Drupal\anonymous_subscriptions\DefaultService;
 use Drupal\anonymous_subscriptions\Entity\Subscription;
 use Drupal\Component\Utility\Crypt;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManager;
-use Drupal\Core\Flood\FloodInterface;
-use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use League\Container\Exception\NotFoundException;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Subscribe form.
  */
-class SubscribeForm extends FormBase {
-
-  /**
-   * Anonymous subscription service.
-   *
-   * @var \Drupal\anonymous_subscriptions\DefaultService
-   */
-  protected $subscriptionService;
-
-  /**
-   * The entity_type.manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * The flood instance.
-   *
-   * @var \Drupal\Core\Flood\FloodInterface
-   */
-  protected $flood;
-
-  /**
-   * Anonymous subscription settings configuration object.
-   *
-   * @var \Drupal\Core\Config\ImmutableConfig
-   */
-  protected $settings;
-
-  /**
-   * Constructs a \Drupal\system\ConfigFormBase object.
-   *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
-   *   The factory for configuration objects.
-   * @param \Drupal\anonymous_subscriptions\DefaultService $subscription_service
-   *   The anonymous subscription service.
-   * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
-   *   The entity_type.manager service.
-   * @param \Drupal\Core\Flood\FloodInterface $flood
-   *   The flood instance.
-   */
-  public function __construct(ConfigFactoryInterface $config_factory, DefaultService $subscription_service, EntityTypeManager $entityTypeManager, FloodInterface $flood) {
-    $this->setConfigFactory($config_factory);
-    $this->settings = $config_factory->get(SettingsForm::$configName);
-    $this->subscriptionService = $subscription_service;
-    $this->entityTypeManager = $entityTypeManager;
-    $this->flood = $flood;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('config.factory'),
-      $container->get('anonymous_subscriptions.default'),
-      $container->get('entity_type.manager'),
-      $container->get('flood')
-    );
-  }
+class SubscribeForm extends SubscribeFormBase {
 
   /**
    * {@inheritdoc}
@@ -87,7 +20,7 @@ class SubscribeForm extends FormBase {
   }
 
   /**
-   * {@inheritdoc}
+   * Title callback.
    */
   public function getTitle($type = NULL) {
     if ($type) {
@@ -158,23 +91,19 @@ class SubscribeForm extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $window = $this->settings->get('anonymous_subscriptions_limit_window');
-    $limit = $this->settings->get('anonymous_subscriptions_ip_limit');
-    if (!$this->flood->isAllowed('failed_subscribe_attempt_ip', $limit, $window)) {
-      $form_state->setError($form['email'], $this->t('You have made too many attempts to subscribe.'));
-      return;
-    }
-    $this->flood->register('failed_subscribe_attempt_ip', $window);
+    parent::validateForm($form, $form_state);
+
     $email = $form_state->getValue('email');
     $type = $form_state->getValue('type');
 
     $query = \Drupal::entityQuery('anonymous_subscription')
-      ->condition('email', $email);
+      ->condition('email', $email)
+      ->condition('entity_type', 'node');
     if (empty($type)) {
-      $query->notExists('type');
+      $query->notExists('entity_bundle');
     }
     else {
-      $query->condition('type', $type);
+      $query->condition('entity_bundle', $type);
     }
     $ids = $query->execute();
     if (!empty(Subscription::loadMultiple($ids))) {
@@ -196,7 +125,8 @@ class SubscribeForm extends FormBase {
     $subscription = Subscription::create([
       'email' => $email,
       'code' => Crypt::randomBytesBase64(20),
-      'type' => $type,
+      'entity_bundle' => $type,
+      'entity_type' => 'node',
       'verified' => !$verification_required,
     ]);
     $subscription->save();

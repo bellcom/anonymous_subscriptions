@@ -1,0 +1,38 @@
+.form-checkboxes div[class*="term-depth-"] label:before {
+  margin-right: 3px;
+}
+.form-checkboxes .term-depth-1 label:before {
+  content: '-';
+}
+.form-checkboxes .term-depth-2 label:before {
+  content: '--';
+}
+.form-checkboxes .term-depth-3 label:before {
+  content: '---';
+}
+.form-checkboxes .term-depth-4 label:before {
+  content: '----';
+}
+.form-checkboxes .term-depth-5 label:before {
+  content: '-----';
+}
+.form-checkboxes .term-depth-6 label:before {
+  content: '------';
+}
+.form-checkboxes .term-depth-7 label:before {
+  content: '-------';
+}
+.form-checkboxes .term-depth-8 label:before {
+  content: '--------';
+}
+.form-checkboxes .term-depth-9 label:before {
+  content: '---------';
+}
+.form-checkboxes .term-depth-10 label:before {
+  content: '---------';
+}
+
+.taxonomy-terms-anonymous-subscriptions .delimiter {
+  font-size: 1.1em;
+  padding: 0 2px;
+}

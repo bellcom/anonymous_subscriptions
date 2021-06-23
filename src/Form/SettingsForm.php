@@ -124,6 +124,20 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('anonymous_subscriptions_node_types') ?: [],
     ];
 
+    $form['subscription_fieldset']['anonymous_subscriptions_taxonomy_terms_depth'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Max depth for taxonomy terms tree'),
+      '#description' => 'Empty value will show all terms.',
+      '#default_value' => $config->get('anonymous_subscriptions_taxonomy_terms_depth'),
+    ];
+
+    $form['subscription_fieldset']['anonymous_subscriptions_lookup_parent_taxonomy_terms'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Send notification on parent taxonomy terms subscriptions'),
+      '#description' => $this->t('Subscription notification would be sent if there were updated content grouped by one of the child terms.'),
+      '#default_value' => $config->get('anonymous_subscriptions_lookup_parent_taxonomy_terms'),
+    ];
+
     $form['email_fieldset'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('General email settings'),

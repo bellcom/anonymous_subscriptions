@@ -14,11 +14,35 @@ anonymous_subscriptions.subscribe_form:
   requirements:
     _permission: 'access content'
 
+anonymous_subscriptions.taxonomy_terms_subscription_form:
+  path: '/taxonomy/subscribe/{vid}'
+  defaults:
+    _form: '\Drupal\anonymous_subscriptions\Form\SubscribeTaxonomyTermsForm'
+    _title_callback: '\Drupal\anonymous_subscriptions\Form\SubscribeTaxonomyTermsForm::getTitle'
+  options:
+    parameters:
+      vocabulary_name:
+        type: string
+  requirements:
+    _permission: 'access content'
+
 anonymous_subscriptions.subscribe_form_type:
   path: '/subscribe/{type}'
   defaults:
     _form: '\Drupal\anonymous_subscriptions\Form\SubscribeForm'
     _title_callback: '\Drupal\anonymous_subscriptions\Form\SubscribeForm::getTitle'
+  options:
+    parameters:
+      type:
+        type: string
+  requirements:
+    _permission: 'access content'
+
+anonymous_subscriptions.subscribe_node_form_type:
+  path: '/node/{node}/subscribe'
+  defaults:
+    _form: '\Drupal\anonymous_subscriptions\Form\SubscribeNodeForm'
+    _title_callback: '\Drupal\anonymous_subscriptions\Form\SubscribeNodeForm::getTitle'
   options:
     parameters:
       type:
