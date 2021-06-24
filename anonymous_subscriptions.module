@@ -104,9 +104,13 @@ function anonymous_subscriptions_form_node_form_alter_submit(&$form, &$form_stat
  * Implements hook_node_insert().
  */
 function anonymous_subscriptions_node_insert($node) {
-  // Resaving send_mail value for new nodes.
-  $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
-  $tempStore->set('send_mail:' . $node->getType() . ':' . $node->id(), $tempStore->get('send_mail:' . $node->getType() . ':new'));
+  $config = \Drupal::config(SettingsForm::$configName);
+  $valid_types = $config->get('anonymous_subscriptions_node_types') ?: [];
+  if (!empty($valid_types[$node->getType()])) {
+    // Resaving send_mail value for new nodes.
+    $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+    $tempStore->set('send_mail:' . $node->getType() . ':' . $node->id(), 'send_mail:' . $node->getType() . ':new');
+  }
   \Drupal::service('anonymous_subscriptions.default')->addPendingEmails($node);
 }
 
