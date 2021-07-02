@@ -18,7 +18,7 @@ class SettingsForm extends ConfigFormBase {
    *
    * @var string
    */
-  public static $configName = 'anonymous_subscription.settings';
+  public static $configName = 'anonymous_subscriptions.settings';
 
   /**
    * Module handler.

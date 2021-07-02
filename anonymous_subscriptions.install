@@ -100,3 +100,18 @@ function anonymous_subscriptions_update_8903() {
   }
 
 }
+
+/**
+ * Implements hook_update_N().
+ *
+ * Updates configuration settings name.
+ */
+function anonymous_subscriptions_update_8904() {
+  $old_config_name = "anonymous_subscription.settings";
+  $new_config_name = "anonymous_subscriptions.settings";
+  $configFactory = Drupal::configFactory();
+  if (!empty($configFactory->get($new_config_name)->getRawData())) {
+    Drupal::messenger()->addWarning($new_config_name . ' configuration object is not empty and should be updated manually');
+  }
+  $configFactory->rename($old_config_name, $new_config_name);
+}
