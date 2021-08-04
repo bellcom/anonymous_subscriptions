@@ -182,3 +182,69 @@ function anonymous_subscriptions_field_config_edit_form_submit(array $form, Form
     $field->save();
   }
 }
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for taxonomy_term_form().
+ *
+ * This is used to display the "Disable anonymous subscription" checkbox.
+ */
+function anonymous_subscriptions_form_taxonomy_term_form_alter(&$form, $form_state, $form_id) {
+  $form_object = $form_state->getFormObject();
+  /** @var Drupal\taxonomy\TermInterface $term */
+  $term = $form_object->getEntity();
+  /** @var Drupal\anonymous_subscriptions\DefaultService $service */
+  $service = \Drupal::service('anonymous_subscriptions.default');
+
+  if (!$service->isVocabularyAllowed($term->bundle())) {
+    return;
+  }
+
+  $config = \Drupal::config(SettingsForm::$configName);
+  $anonymous_subscription_disabled_terms = $config->get('anonymous_subscription_disabled_terms');
+  $form['anonymous_subscription'] = [
+    '#type' => 'details',
+    '#title' => t('Anonymous subscription'),
+    '#open' => in_array($term->id(), $anonymous_subscription_disabled_terms),
+  ];
+
+  $form['anonymous_subscription']['anonymous_subscription_disabled_terms'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Disable subscription for this taxonomy term'),
+    '#default_value' => in_array($term->id(), $anonymous_subscription_disabled_terms),
+    '#weight' => 10,
+    '#groups' => 'anonymous_subscription',
+  ];
+
+  array_unshift($form['actions']['submit']['#submit'], 'anonymous_subscriptions_form_taxonomy_term_form_alter_submit');
+
+}
+
+/**
+ * Custom form submit callback for taxonomy_term_form.
+ */
+function anonymous_subscriptions_form_taxonomy_term_form_alter_submit(&$form, &$form_state) {
+  $form_fields = &$form_state->getValues();
+
+  /** @var Drupal\taxonomy\TermInterface $term */
+  $term = $form_state->getFormObject()->getEntity();
+  $config = \Drupal::configFactory()->getEditable(SettingsForm::$configName);
+  $anonymous_subscription_disabled_terms = $config->get('anonymous_subscription_disabled_terms');
+
+  // Update disabled terms array.
+  if ($form_fields['anonymous_subscription_disabled_terms']) {
+    if (!in_array($term->id(), $anonymous_subscription_disabled_terms)) {
+      $anonymous_subscription_disabled_terms[] = $term->id();
+      $config->set('anonymous_subscription_disabled_terms', $anonymous_subscription_disabled_terms);
+      $config->save();
+    }
+  }
+  else {
+    if (in_array($term->id(), $anonymous_subscription_disabled_terms)) {
+      $key = array_search($term->id(), $anonymous_subscription_disabled_terms);
+      unset($anonymous_subscription_disabled_terms[$key]);
+      $config->set('anonymous_subscription_disabled_terms', $anonymous_subscription_disabled_terms);
+      $config->save();
+    }
+  }
+}
+

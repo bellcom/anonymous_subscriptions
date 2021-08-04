@@ -57,9 +57,13 @@ class SubscribeTaxonomyTermsForm extends SubscribeFormBase {
     ];
 
     $vocabulary = Vocabulary::load($vid);
+    $anonymous_subscription_disabled_terms = $this->settings->get('anonymous_subscription_disabled_terms');
     $options = [];
     $depthClasses = [];
     foreach ($terms as $term) {
+      if (in_array($term->id(), $anonymous_subscription_disabled_terms)) {
+        continue;
+      }
       $options[$term->id()] = $term->getName();
       $depthClasses[$term->id()] = [
         '#wrapper_attributes' => [
