@@ -20,7 +20,7 @@ use Drupal\node\NodeInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class DefaultService.
+ * Class implements subscription service functionality.
  */
 class DefaultService {
 

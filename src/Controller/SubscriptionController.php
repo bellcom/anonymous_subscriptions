@@ -10,7 +10,7 @@ use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class SubscriptionController.
+ * Class implements callbacks for subscription functionality.
  */
 class SubscriptionController extends ControllerBase {
 
