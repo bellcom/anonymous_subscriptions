@@ -5,3 +5,8 @@ services:
   anonymous_subscriptions.default:
     class: Drupal\anonymous_subscriptions\DefaultService
     arguments: ['@config.factory', '@plugin.manager.mail', '@language_manager', '@logger.channel.anonymous_subscriptions', '@token', '@tempstore.private', '@queue', '@entity_type.manager', '@entity_field.manager']
+  anonymous_subscriptions.scheduled_transition_subscriber:
+    class: Drupal\anonymous_subscriptions\EventSubscriber\SchedulerEventSubscriber
+    arguments: ['@anonymous_subscriptions.default']
+    tags:
+      - { name: event_subscriber }
