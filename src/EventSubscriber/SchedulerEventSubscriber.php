@@ -49,7 +49,7 @@ class SchedulerEventSubscriber implements EventSubscriberInterface {
   public static function getSubscribedEvents() {
     // The values in the arrays give the function names above.
     $events = [];
-    if (\Drupal::service('module_handler')->moduleExists('scheduler')) {
+    if (class_exists('\Drupal\scheduler\SchedulerEvents')) {
       $events[SchedulerEvents::PUBLISH][] = ['publish'];
     }
     return $events;
