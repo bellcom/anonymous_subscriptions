@@ -135,6 +135,7 @@ class SubscribeTaxonomyTermsForm extends SubscribeFormBase {
         unset($tids[$term->id()]);
       }
       $this->messenger()->addStatus($this->t('Email address @email already subscribed for taxonomy terms: @terms Creating of new subscriptions was these terms skipped.', [
+        '@email' => $email,
         '@terms' => Markup::create(\Drupal::service('renderer')->renderPlain($subscribed_terms_names)),
       ]));
     }
