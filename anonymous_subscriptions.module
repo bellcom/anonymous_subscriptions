@@ -195,12 +195,12 @@ function anonymous_subscriptions_form_taxonomy_term_form_alter(&$form, $form_sta
   /** @var Drupal\anonymous_subscriptions\DefaultService $service */
   $service = \Drupal::service('anonymous_subscriptions.default');
 
-  if (!$service->isVocabularyAllowed($term->bundle())) {
+  if (!$service->isVocabularyAllowed($term->bundle()) || empty($term->id())) {
     return;
   }
 
   $config = \Drupal::config(SettingsForm::$configName);
-  $anonymous_subscription_disabled_terms = $config->get('anonymous_subscription_disabled_terms');
+  $anonymous_subscription_disabled_terms = $config->get('anonymous_subscription_disabled_terms') ?: [];
   $form['anonymous_subscription'] = [
     '#type' => 'details',
     '#title' => t('Anonymous subscription'),
@@ -228,7 +228,7 @@ function anonymous_subscriptions_form_taxonomy_term_form_alter_submit(&$form, &$
   /** @var Drupal\taxonomy\TermInterface $term */
   $term = $form_state->getFormObject()->getEntity();
   $config = \Drupal::configFactory()->getEditable(SettingsForm::$configName);
-  $anonymous_subscription_disabled_terms = $config->get('anonymous_subscription_disabled_terms');
+  $anonymous_subscription_disabled_terms = $config->get('anonymous_subscription_disabled_terms') ?: [];
 
   // Update disabled terms array.
   if ($form_fields['anonymous_subscription_disabled_terms']) {
