@@ -1,0 +1,9 @@
+anonymous_subscriptions.settings_form:
+  route_name: anonymous_subscriptions.settings_form
+  title: 'Settings'
+  base_route: anonymous_subscriptions.settings_form
+
+anonymous_subscriptions.cleanup:
+  route_name: anonymous_subscriptions.cleanup
+  title: 'Remove all subscriptions'
+  base_route: anonymous_subscriptions.settings_form

@@ -6,6 +6,15 @@ anonymous_subscriptions.settings_form:
   requirements:
     _permission: 'administer anonymous_subscriptions'
 
+anonymous_subscriptions.cleanup:
+  path: '/admin/config/content/anonymous_subscriptions/cleanup'
+  defaults:
+    _form: '\Drupal\system\Form\PrepareModulesEntityUninstallForm'
+    _title_callback: '\Drupal\system\Form\PrepareModulesEntityUninstallForm::formTitle'
+    entity_type_id: 'anonymous_subscription'
+  requirements:
+    _permission: 'administer anonymous_subscriptions'
+
 anonymous_subscriptions.subscribe_form:
   path: '/subscribe'
   defaults:
