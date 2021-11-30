@@ -115,3 +115,16 @@ function anonymous_subscriptions_update_8904() {
   }
   $configFactory->rename($old_config_name, $new_config_name);
 }
+
+/**
+ * Implements hook_update_N().
+ *
+ * Removing outdated configuration entity.
+ */
+function anonymous_subscriptions_update_8906() {
+  $old_config_name = "anonymous_subscription.settings";
+  $configFactory = Drupal::configFactory();
+  if (!empty($configFactory->get($old_config_name)->getRawData())) {
+    Drupal::configFactory()->getEditable($old_config_name)->delete();
+  }
+}
