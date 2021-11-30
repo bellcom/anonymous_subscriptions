@@ -13,8 +13,11 @@ use Drupal\Core\Field\BaseFieldDefinition;
  * @ingroup subscription
  * @ContentEntityType(
  *   id = "anonymous_subscription",
- *   label = @Translation("Subscription"),
+ *   label = @Translation("Anonymous subscription"),
  *   base_table = "anonymous_subscription",
+ *   handlers = {
+ *     "views_data" = "Drupal\views\EntityViewsData",
+ *   },
  *   entity_keys = {
  *     "id" = "id",
  *     "uuid" = "uuid",
