@@ -1,0 +1,13 @@
+{
+  "name": "drupal/anonymous_subscriptions",
+  "type": "drupal-module",
+  "description": "Provide Subscription functionality to anonymous users.",
+  "license": "GPL-2.0-or-later",
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://packages.drupal.org/8"
+    }
+  ],
+  "require": {}
+}
