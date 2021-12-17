@@ -171,6 +171,37 @@ class SettingsForm extends ConfigFormBase {
       ];
     }
 
+    $nodeTypes = $config->get('anonymous_subscriptions_node_types');
+    foreach ($nodeTypes as $typeMachineName => $enabled) {
+      if ($enabled) {
+        $form["email_fieldset_type_$typeMachineName"] = [
+          '#type' => 'details',
+          '#title' => $this->t('Email settings override for: %type', ['%type' => $typeMachineName]),
+        ];
+
+        $form["email_fieldset_type_$typeMachineName"]["anonymous_subscriptions_subject_text_$typeMachineName"] = [
+          '#type' => 'textfield',
+          '#title' => $this->t('Subject text'),
+          '#description' => 'Leave empty to use default setting. Tokens are available',
+          '#default_value' => $config->get("anonymous_subscriptions_subject_text_$typeMachineName"),
+        ];
+
+        $form["email_fieldset_type_$typeMachineName"]["anonymous_subscriptions_body_text_$typeMachineName"] = [
+          '#type' => 'textarea',
+          '#title' => $this->t('Body text'),
+          '#description' => 'Leave empty to use default setting. Tokens are available',
+          '#default_value' => $config->get("anonymous_subscriptions_body_text_$typeMachineName"),
+        ];
+
+        if ($this->moduleHandler->moduleExists('token')) {
+          $form["email_fieldset_type_$typeMachineName"]['token_help'] = [
+            '#theme' => 'token_tree_link',
+            '#token_types' => ['site', 'node'],
+          ];
+        }
+      }
+    }
+
     return parent::buildForm($form, $form_state);
   }
 

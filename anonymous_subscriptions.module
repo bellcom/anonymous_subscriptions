@@ -46,6 +46,15 @@ function anonymous_subscriptions_theme() {
       ],
       'template' => 'anonymous-subscriptions-message',
     ],
+    'anonymous_subscriptions_notification_email' => [
+      'variables' => [
+        'body' => FALSE,
+        'subscription_reason_text' => FALSE,
+        'unsubscribe_url' => FALSE,
+        'unsubscribe_all_url' => FALSE
+      ],
+      'template' => 'anonymous-subscriptions-notification-email',
+    ],
   ];
 }
 
@@ -57,6 +66,31 @@ function anonymous_subscriptions_mail($key, &$message, $params) {
     case 'anonymous_subscriptions_key':
       $message['subject'] = $params['subject'];
       $message['body'][] = $params['body'];
+
+      if (!isset($params['from'])) {
+        $params['from'] = \Drupal::config('system.site')->get('mail');
+      }
+
+      if (!isset($params['sender'])) {
+        $params['sender'] = \Drupal::config('system.site')->get('name');
+      }
+      $params['sender'] = '=?UTF-8?B?' . base64_encode($params['sender']) . '?=';
+
+      $message['headers'] = array_merge($message['headers'], [
+        'content-type' => 'text/html; charset=UTF-8;',
+        'content-transfer-encoding' => '8Bit',
+        'MIME-Version' => '1.0',
+        'reply-to' => $params['from'],
+      ]);
+
+      if (isset($params['Cc'])) {
+        $message['headers']['Cc'] = $params['Cc'];
+      }
+
+      if (isset($params['Bcc'])) {
+        $message['headers']['Bcc'] = $params['Bcc'];
+      }
+
       break;
   }
 }

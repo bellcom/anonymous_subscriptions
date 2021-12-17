@@ -10,6 +10,7 @@ use Drupal\Core\Entity\EntityFieldManager;
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Link;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Core\Queue\QueueFactory;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -296,26 +297,44 @@ class DefaultService {
     $original_subject = $this->settings->get('anonymous_subscriptions_subject_text');
     $original_body = $this->settings->get('anonymous_subscriptions_body_text');
 
+    // Check if we have any overrides.
+    if ($this->settings->get("anonymous_subscriptions_subject_text_$type")) {
+      $original_subject = $this->settings->get("anonymous_subscriptions_subject_text_$type");
+    }
+    if ($this->settings->get("anonymous_subscriptions_body_text_$type")) {
+      $original_body = $this->settings->get("anonymous_subscriptions_body_text_$type");
+    }
+
+    // Making replacements.
+    $subject = $this->token->replace($original_subject, ['node' => $node]);
+    $body = $this->token->replace($original_body, ['node' => $node]);
+
+    // Setting front-end theme.
+    /** @var \Drupal\Core\Theme\ThemeInitialization $theme_initialization */
+    $theme_initialization = \Drupal::service('theme.initialization');
+    $active_theme = \Drupal::theme()->getActiveTheme();
+    $config = \Drupal::config('system.theme');
+    $defaultTheme =  $config->get('default');
+    \Drupal::theme()->setActiveTheme($theme_initialization->getActiveThemeByName($defaultTheme));
+
     $count = 0;
     /** @var \Drupal\anonymous_subscriptions\Entity\Subscription $subscription */
     foreach ($subscriptions as $subscription) {
       $email = $subscription->email->value;
-      $subject = $this->token->replace($original_subject, ['node' => $node]);
-      $body = $this->token->replace($original_body, ['node' => $node]);
-      $body .= "\n\n";
-      $body .= $this->t("You got this email because you are subscribed for updates on @reason_text", [
-        '@reason_text' => $this->getSubscriptionReasonText($subscription),
-      ]);
-      $body .= "\r\n";
-      $body .= $this->t("To unsubscribe please visit url @unsubscribe_url\r\nTo remove all your subscription visit url @unsubscribe_all_url", [
-        '@unsubscribe_url' => $this->getUnsubscribeUrl($subscription),
-        '@unsubscribe_all_url' => $this->getUnsubscribeUrl($subscription, TRUE),
-      ]);
+      // Rendering content.
+      $renderable = [
+        '#theme' => 'anonymous_subscriptions_notification_email',
+        '#body' => $body,
+        '#subscription_reason_text' => $this->getSubscriptionReasonText($subscription),
+        '#unsubscribe_url' => $this->getUnsubscribeUrl($subscription),
+        '#unsubscribe_all_url' => $this->getUnsubscribeUrl($subscription, TRUE),
+      ];
+      $htmlBody = \Drupal::service('renderer')->renderPlain($renderable);
 
       $fields = [
         'to' => $email,
         'subject' => $subject,
-        'body' => $body,
+        'body' => $htmlBody,
         'nid' => $node->id(),
       ];
 
@@ -328,6 +347,9 @@ class DefaultService {
       $this->logger->notice($log_text);
       $count++;
     }
+
+    // Changing theme back.
+    \Drupal::theme()->setActiveTheme($active_theme);
 
     if ($count > 0) {
       $message = t('Queuing @count emails to be sent to your subscribers.', [
