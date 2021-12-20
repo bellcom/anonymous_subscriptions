@@ -77,10 +77,10 @@ function anonymous_subscriptions_mail($key, &$message, $params) {
       $params['sender'] = '=?UTF-8?B?' . base64_encode($params['sender']) . '?=';
 
       $message['headers'] = array_merge($message['headers'], [
-        'content-type' => 'text/html; charset=UTF-8;',
-        'content-transfer-encoding' => '8Bit',
+        'Content-Type' => 'text/html; charset=UTF-8;',
+        'Content-Transfer-Encoding' => '8Bit',
         'MIME-Version' => '1.0',
-        'reply-to' => $params['from'],
+        'Reply-To' => $params['from'],
       ]);
 
       if (isset($params['Cc'])) {
