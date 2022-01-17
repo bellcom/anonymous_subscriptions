@@ -14,6 +14,14 @@ anonymous_subscriptions.cleanup:
   requirements:
     _permission: 'administer anonymous_subscriptions'
 
+entity.anonymous_subscription.delete_form:
+  path: '/admin/config/content/anonymous_subscriptions/{anonymous_subscription}/delete'
+  defaults:
+    _entity_form: anonymous_subscription.delete
+    _title: 'Delete subscription'
+  requirements:
+    _entity_access: 'anonymous_subscription.delete'
+
 anonymous_subscriptions.subscribe_form:
   path: '/subscribe'
   defaults:

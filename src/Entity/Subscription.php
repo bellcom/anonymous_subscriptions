@@ -17,11 +17,20 @@ use Drupal\Core\Field\BaseFieldDefinition;
  *   base_table = "anonymous_subscription",
  *   handlers = {
  *     "views_data" = "Drupal\views\EntityViewsData",
+ *     "view_builder" = "Drupal\Core\Entity\EntityViewBuilder",
+ *     "list_builder" = "Drupal\Core\Entity\EntityListBuilder",
+ *     "form" = {
+ *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm",
+ *     },
+ *     "access" = "Drupal\anonymous_subscriptions\SubscriptionAccessControlHandler",
  *   },
  *   entity_keys = {
  *     "id" = "id",
  *     "uuid" = "uuid",
  *     "email" = "email",
+ *   },
+ *   links = {
+ *     "delete-form" = "/admin/config/content/anonymous_subscriptions/{anonymous_subscription}/delete",
  *   },
  * )
  */

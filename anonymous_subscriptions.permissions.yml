@@ -4,3 +4,6 @@ administer anonymous_subscriptions:
 alter anonymous_subscriptions:
   title: 'Change subscription settings on node form'
   description: 'Change subscription settings on node form'
+delete anonymous_subscription entities:
+  title: 'Delete subscription records'
+  description: 'Change subscription settings on node form'
