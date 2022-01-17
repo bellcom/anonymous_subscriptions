@@ -6,7 +6,9 @@
  */
 
 use Drupal\anonymous_subscriptions\Form\SettingsForm;
+use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\views\Views;
 
 /**
  * Implements hook_uninstall().
@@ -127,4 +129,28 @@ function anonymous_subscriptions_update_8906() {
   if (!empty($configFactory->get($old_config_name)->getRawData())) {
     Drupal::configFactory()->getEditable($old_config_name)->delete();
   }
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Import anonymous subscription view.
+ */
+function anonymous_subscriptions_update_8908() {
+  if (Views::getView('anonymous_subscriptions')) {
+    Drupal::messenger()->addWarning('There is already exists view with id anonymous_subscriptions already. Review the existing view.');
+    return;
+  }
+
+  $dir = drupal_get_path('module', 'anonymous_subscriptions');
+  $fileStorage = new FileStorage($dir . '/config/install');
+  $config = $fileStorage->read('views.view.anonymous_subscriptions');
+
+  /** @var \Drupal\Core\Config\Entity\ConfigEntityStorage $storage */
+  $storage = \Drupal::entityTypeManager()
+    ->getStorage('view');
+
+  /** @var \Drupal\views\Entity\View $view */
+  $view = $storage->create($config);
+  $view->save();
 }
