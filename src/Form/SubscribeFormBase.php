@@ -8,6 +8,8 @@ use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Flood\FloodInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
+use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -88,4 +90,16 @@ abstract class SubscribeFormBase extends FormBase {
     $this->flood->register('failed_subscribe_attempt_ip', $window);
   }
 
+  public function appendUserConsentCheckbox(&$form) {
+    if ($this->settings->get('anonymous_subscriptions_user_consent_page')) {
+      $node = Node::load($this->settings->get('anonymous_subscriptions_user_consent_page'));
+      $url = $node->toUrl('canonical', ['attributes' => ['target' => '_blank']])->setAbsolute();
+
+      $form['user_consent'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Check the box to give consent to %link', ['%link' => Link::fromTextAndUrl($node->label(), $url)->toString()]),
+        '#required' => TRUE,
+      ];
+    }
+  }
 }

@@ -73,6 +73,8 @@ class SubscribeForm extends SubscribeFormBase {
       '#required' => TRUE,
     ];
 
+    $this->appendUserConsentCheckbox($form);
+
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Subscribe'),

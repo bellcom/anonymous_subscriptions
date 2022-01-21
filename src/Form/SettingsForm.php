@@ -6,6 +6,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -136,6 +137,18 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Send notification on parent taxonomy terms subscriptions'),
       '#description' => $this->t('Subscription notification would be sent if there were updated content grouped by one of the child terms.'),
       '#default_value' => $config->get('anonymous_subscriptions_lookup_parent_taxonomy_terms'),
+    ];
+
+    $form['subscription_fieldset']['anonymous_subscriptions_user_consent_page'] = [
+      '#type' => 'entity_autocomplete',
+      '#title' => $this->t('User consent page'),
+      '#description' => $this->t('Providing the page here will force user to agree to user consent first before submiting the subscription form.'),
+      '#target_type' => 'node',
+      '#selection_handler' => 'default',
+      '#selection_settings' => [
+        'target_bundles' => ['os2web_page'],
+      ],
+      '#default_value' => ($config->get('anonymous_subscriptions_user_consent_page')) ? Node::load($config->get('anonymous_subscriptions_user_consent_page')) : NULL,
     ];
 
     $form['email_fieldset'] = [

@@ -86,6 +86,8 @@ class SubscribeTaxonomyTermsForm extends SubscribeFormBase {
       $form['terms'] += $depthClasses;
     }
 
+    $this->appendUserConsentCheckbox($form);
+
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Subscribe'),

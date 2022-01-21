@@ -181,6 +181,8 @@ class SubscribeNodeForm extends SubscribeFormBase {
       ],
     ] + $depthClasses;
 
+    $this->appendUserConsentCheckbox($form);
+
     return $form;
   }
 
