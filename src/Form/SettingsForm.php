@@ -92,7 +92,7 @@ class SettingsForm extends ConfigFormBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Send by default'),
       '#default_value' => $config->get('anonymous_subscriptions_send_default'),
-      '#description' => 'Tick this is you want the default option to be send emails.',
+      '#description' => $this->t('Tick this is you want the default option to be send emails.'),
     ];
 
     $form['subscription_fieldset']['anonymous_subscriptions_limit_window'] = [
@@ -127,7 +127,7 @@ class SettingsForm extends ConfigFormBase {
     $form['subscription_fieldset']['anonymous_subscriptions_taxonomy_terms_depth'] = [
       '#type' => 'number',
       '#title' => $this->t('Max depth for taxonomy terms tree'),
-      '#description' => 'Empty value will show all terms.',
+      '#description' => $this->t('Empty value will show all terms.'),
       '#default_value' => $config->get('anonymous_subscriptions_taxonomy_terms_depth'),
     ];
 
@@ -146,21 +146,21 @@ class SettingsForm extends ConfigFormBase {
     $form['email_fieldset']['anonymous_subscriptions_sender'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Sender'),
-      '#description' => 'Subscription send from. If empty default site email will be used.',
+      '#description' => $this->t('Subscription send from. If empty default site email will be used.'),
       '#default_value' => $config->get('anonymous_subscriptions_sender'),
     ];
 
     $form['email_fieldset']['anonymous_subscriptions_subject_text'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Subject text'),
-      '#description' => 'Tokens are available',
+      '#description' => $this->t('Tokens are available'),
       '#default_value' => $config->get('anonymous_subscriptions_subject_text'),
     ];
 
     $form['email_fieldset']['anonymous_subscriptions_body_text'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Body text'),
-      '#description' => 'Tokens are available',
+      '#description' => $this->t('Tokens are available'),
       '#default_value' => $config->get('anonymous_subscriptions_body_text'),
     ];
 
@@ -182,14 +182,14 @@ class SettingsForm extends ConfigFormBase {
         $form["email_fieldset_type_$typeMachineName"]["anonymous_subscriptions_subject_text_$typeMachineName"] = [
           '#type' => 'textfield',
           '#title' => $this->t('Subject text'),
-          '#description' => 'Leave empty to use default setting. Tokens are available',
+          '#description' => $this->t('Leave empty to use default setting. Tokens are available'),
           '#default_value' => $config->get("anonymous_subscriptions_subject_text_$typeMachineName"),
         ];
 
         $form["email_fieldset_type_$typeMachineName"]["anonymous_subscriptions_body_text_$typeMachineName"] = [
           '#type' => 'textarea',
           '#title' => $this->t('Body text'),
-          '#description' => 'Leave empty to use default setting. Tokens are available',
+          '#description' => $this->t('Leave empty to use default setting. Tokens are available'),
           '#default_value' => $config->get("anonymous_subscriptions_body_text_$typeMachineName"),
         ];
 
