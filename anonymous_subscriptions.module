@@ -118,6 +118,26 @@ function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form
       '#access' => $current_user->hasPermission('alter anonymous_subscriptions') || $current_user->hasPermission('administer anonymous_subscriptions'),
       '#weight' => 10,
     ];
+    $form['options']['send_test_email'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Send test e-mails'),
+      '#group' => 'options',
+      '#access' => $current_user->hasPermission('alter anonymous_subscriptions') || $current_user->hasPermission('administer anonymous_subscriptions'),
+      '#weight' => 11,
+    ];
+    $form['options']['send_test_email_emails'] = [
+      '#type' => 'textfield',
+      '#title' => t('Recipients of the test email'),
+      '#group' => 'options',
+      '#access' => $current_user->hasPermission('alter anonymous_subscriptions') || $current_user->hasPermission('administer anonymous_subscriptions'),
+      '#weight' => 12,
+      '#states' => [
+        'visible' => [
+          ':input[name="send_test_email"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+
     array_unshift($form['actions']['submit']['#submit'], 'anonymous_subscriptions_form_node_form_alter_submit');
   }
 }
@@ -128,10 +148,20 @@ function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form
 function anonymous_subscriptions_form_node_form_alter_submit(&$form, &$form_state) {
   /** @var \Drupal\node\NodeInterface $node */
   $node = $form_state->getFormObject()->getEntity();
-  // Saving send email flag to temporary private storage.
-  $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
-  $id = $node->id() ?: 'new';
-  $tempStore->set('send_mail:' . $node->getType() . ':' . $id, $form_state->getValue('send_emails'));
+
+  if ($form_state->getValue('send_test_email')) {
+    $test_emails = $form_state->getValue('send_test_email_emails');
+    $emails = explode(',', $test_emails);
+    if (!empty($emails)) {
+      \Drupal::service('anonymous_subscriptions.default')->sendTestEmail($node, $emails);
+    }
+  }
+  else {
+    // Saving send email flag to temporary private storage.
+    $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+    $id = $node->id() ?: 'new';
+    $tempStore->set('send_mail:' . $node->getType() . ':' . $id, $form_state->getValue('send_emails'));
+  }
 }
 
 /**

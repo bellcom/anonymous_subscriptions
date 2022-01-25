@@ -294,21 +294,6 @@ class DefaultService {
 
     $queue = $this->queueFactory->get('anonymous_subscriptions_queue');
 
-    $original_subject = $this->settings->get('anonymous_subscriptions_subject_text');
-    $original_body = $this->settings->get('anonymous_subscriptions_body_text');
-
-    // Check if we have any overrides.
-    if ($this->settings->get("anonymous_subscriptions_subject_text_$type")) {
-      $original_subject = $this->settings->get("anonymous_subscriptions_subject_text_$type");
-    }
-    if ($this->settings->get("anonymous_subscriptions_body_text_$type")) {
-      $original_body = $this->settings->get("anonymous_subscriptions_body_text_$type");
-    }
-
-    // Making replacements.
-    $subject = $this->token->replace($original_subject, ['node' => $node]);
-    $body = $this->token->replace($original_body, ['node' => $node]);
-
     // Setting front-end theme.
     /** @var \Drupal\Core\Theme\ThemeInitialization $theme_initialization */
     $theme_initialization = \Drupal::service('theme.initialization');
@@ -320,29 +305,14 @@ class DefaultService {
     $count = 0;
     /** @var \Drupal\anonymous_subscriptions\Entity\Subscription $subscription */
     foreach ($subscriptions as $subscription) {
-      $email = $subscription->email->value;
-      // Rendering content.
-      $renderable = [
-        '#theme' => 'anonymous_subscriptions_notification_email',
-        '#body' => $body,
-        '#subscription_reason_text' => $this->getSubscriptionReasonText($subscription),
-        '#unsubscribe_url' => $this->getUnsubscribeUrl($subscription),
-        '#unsubscribe_all_url' => $this->getUnsubscribeUrl($subscription, TRUE),
-      ];
-      $htmlBody = \Drupal::service('renderer')->renderPlain($renderable);
+      $to = $subscription->email->value;
+      $emailItem = $this->buildEmailItem($node, $to, $subscription);
+      $queue->createItem($emailItem);
 
-      $fields = [
-        'to' => $email,
-        'subject' => $subject,
-        'body' => $htmlBody,
-        'nid' => $node->id(),
-      ];
-
-      $queue->createItem($fields);
       $log_text = t("Adding pending email to :to with subject :subject for nid :nid", [
-        ':to' => $fields['to'],
-        ':subject' => $fields['subject'],
-        ':nid' => $fields['nid'],
+        ':to' => $emailItem['to'],
+        ':subject' => $emailItem['subject'],
+        ':nid' => $emailItem['nid'],
       ]);
       $this->logger->notice($log_text);
       $count++;
@@ -350,6 +320,9 @@ class DefaultService {
 
     // Changing theme back.
     \Drupal::theme()->setActiveTheme($active_theme);
+
+    // Deleting the key.
+    $this->tempStore->delete('send_mail:' . $node->getType() . ':' . $node->id());
 
     if ($count > 0) {
       $message = t('Queuing @count emails to be sent to your subscribers.', [
@@ -360,6 +333,113 @@ class DefaultService {
       $message = t("No emails to be sent, there are no subscribers.");
     }
     \Drupal::messenger()->addMessage($message);
+  }
+
+  /**
+   * Function to send a test type of the emails right away.
+   *
+   * These emails will skips the queue.
+   *
+   * @param \Drupal\node\NodeInterface $node
+   *   Subject node.
+   * @param $emails
+   *   Array list of the emails.
+   *
+   * @throws \Drupal\Core\Theme\MissingThemeDependencyException
+   */
+  public function sendTestEmail(NodeInterface $node, $emails) {
+    // Setting front-end theme.
+    /** @var \Drupal\Core\Theme\ThemeInitialization $theme_initialization */
+    $theme_initialization = \Drupal::service('theme.initialization');
+    $active_theme = \Drupal::theme()->getActiveTheme();
+    $config = \Drupal::config('system.theme');
+    $defaultTheme =  $config->get('default');
+    \Drupal::theme()->setActiveTheme($theme_initialization->getActiveThemeByName($defaultTheme));
+
+    $count = 0;
+    foreach ($emails as $email) {
+      $emailItem = $this->buildEmailItem($node, $email);
+      // Adding mark that is a TEST email.
+      $emailItem['subject'] = '[TEST] ' . $emailItem['subject'];
+      $this->sendMail($emailItem);
+      $count++;
+    }
+
+    // Changing theme back.
+    \Drupal::theme()->setActiveTheme($active_theme);
+
+    if ($count > 0) {
+      $message = t('Sending @count test emails to be sent', [
+        '@count' => $count,
+      ]);
+      \Drupal::messenger()->addMessage($message);
+    }
+  }
+
+  /**
+   * Helper function to build email item.
+   *
+   * @param \Drupal\node\NodeInterface $subjectNode
+   *   Subject node.
+   * @param $email
+   *   Email to send to.
+   * @param \Drupal\anonymous_subscriptions\Entity\Subscription|NULL $subscription
+   *   Subcription object. If null, unsubscribe links will not be available.
+   *
+   * @return array
+   *   Email item as
+   *   [
+   *     'to' => email,
+   *     'subject' => subject as plaintext,
+   *     'body' => rendered html,
+   *     'nid' => ID of the subject node
+   *   ]
+   *
+   * @throws \Drupal\Core\Theme\MissingThemeDependencyException
+   */
+  private function buildEmailItem(NodeInterface $subjectNode, $email, Subscription $subscription = NULL) {
+    $original_subject = $this->settings->get('anonymous_subscriptions_subject_text');
+    $original_body = $this->settings->get('anonymous_subscriptions_body_text');
+
+    // Check if we have any overrides.
+    $type = $subjectNode->getType();
+
+    if ($this->settings->get("anonymous_subscriptions_subject_text_$type")) {
+      $original_subject = $this->settings->get("anonymous_subscriptions_subject_text_$type");
+    }
+    if ($this->settings->get("anonymous_subscriptions_body_text_$type")) {
+      $original_body = $this->settings->get("anonymous_subscriptions_body_text_$type");
+    }
+
+    // Making replacements.
+    $subject = $this->token->replace($original_subject, ['node' => $subjectNode]);
+    $body = $this->token->replace($original_body, ['node' => $subjectNode]);
+
+    // Setting front-end theme.
+    /** @var \Drupal\Core\Theme\ThemeInitialization $theme_initialization */
+    $theme_initialization = \Drupal::service('theme.initialization');
+    $active_theme = \Drupal::theme()->getActiveTheme();
+    $config = \Drupal::config('system.theme');
+    $defaultTheme =  $config->get('default');
+    \Drupal::theme()->setActiveTheme($theme_initialization->getActiveThemeByName($defaultTheme));
+
+    // Rendering content.
+    $renderable = [
+      '#theme' => 'anonymous_subscriptions_notification_email',
+      '#body' => $body,
+      '#subscription_reason_text' => ($subscription) ? $this->getSubscriptionReasonText($subscription) : '',
+      '#unsubscribe_url' => ($subscription) ? $this->getUnsubscribeUrl($subscription) : '',
+      '#unsubscribe_all_url' => ($subscription) ? $this->getUnsubscribeUrl($subscription, TRUE) : '',
+    ];
+
+    $htmlBody = \Drupal::service('renderer')->renderPlain($renderable);
+
+    return [
+      'to' => $email,
+      'subject' => $subject,
+      'body' => $htmlBody,
+      'nid' => $subjectNode->id(),
+    ];
   }
 
   /**
