@@ -13,6 +13,6 @@
 
 {{ body|raw }}
 
-<div>You got this email because you are subscribed for updates on <i>{{ subscription_reason_text }}</i></div>
-<div>To unsubscribe please click <a href="{{ unsubscribe_url }}">here</a></div>
-<div>To remove all your subscription please click <a href="{{ unsubscribe_all_url }}">here</a></div>
+<div>{{ 'You got this email because you are subscribed for updates on' | trans }} <i>{{ subscription_reason_text }}</i></div>
+<div>{{ 'To unsubscribe please click' | trans }} <a href="{{ unsubscribe_url }}">{{ 'here' | trans }}</a></div>
+<div>{{ 'To remove all your subscription please click' | trans }} <a href="{{ unsubscribe_all_url }}">{{ 'here' | trans }}</a></div>
