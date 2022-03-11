@@ -80,7 +80,7 @@ function anonymous_subscriptions_mail($key, &$message, $params) {
         'Content-Type' => 'text/html; charset=UTF-8;',
         'Content-Transfer-Encoding' => '8Bit',
         'MIME-Version' => '1.0',
-        'Reply-To' => $params['from'],
+        'From' => $params['from'],
       ]);
 
       if (isset($params['Cc'])) {
