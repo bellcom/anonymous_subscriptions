@@ -199,7 +199,7 @@ class DefaultService {
 
     $to = $message['to'];
     $from = empty($message['from']) ? $this->getSender() : $message['from'];
-    $params['from'] = $siteName . ' <' . $from . '>';
+    $params['from'] = $from;
     $params['subject'] = $message['subject'];
     $params['body'] = $message['body'];
 

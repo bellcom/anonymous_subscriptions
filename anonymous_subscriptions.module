@@ -81,6 +81,7 @@ function anonymous_subscriptions_mail($key, &$message, $params) {
         'Content-Transfer-Encoding' => '8Bit',
         'MIME-Version' => '1.0',
         'From' => $params['from'],
+        'Sender' => $params['from'],
       ]);
 
       if (isset($params['Cc'])) {
