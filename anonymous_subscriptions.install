@@ -154,3 +154,14 @@ function anonymous_subscriptions_update_8908() {
   $view = $storage->create($config);
   $view->save();
 }
+
+/**
+ * Implements hook_update_N().
+ *
+ * Setting anonymous_subscriptions_scheduled_hour to -1 value = next cron.
+ */
+function anonymous_subscriptions_update_8909() {
+  $config = Drupal::configFactory()->getEditable(SettingsForm::$configName);
+  $config->set('anonymous_subscriptions_scheduled_hour', -1);
+  $config->save();
+}

@@ -151,6 +151,20 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => ($config->get('anonymous_subscriptions_user_consent_page')) ? Node::load($config->get('anonymous_subscriptions_user_consent_page')) : NULL,
     ];
 
+    $scheduledHourOptions = [
+      -1 => t('Next cron'),
+    ];
+    for ($i = 0; $i < 24; $i++) {
+      $scheduledHourOptions[$i] = $i;
+    }
+    $form['subscription_fieldset']['anonymous_subscriptions_scheduled_hour'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Email sending scheduled hour'),
+      '#default_value' => $config->get('anonymous_subscriptions_scheduled_hour'),
+      '#options' => $scheduledHourOptions,
+      '#description' => $this->t('Specify if emails should be sent at the specific hour each day rather than on next cron.'),
+    ];
+
     $form['email_fieldset'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('General email settings'),
