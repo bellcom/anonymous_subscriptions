@@ -153,10 +153,17 @@ class DefaultService {
     $replacements['@reason_text'] = $this->getSubscriptionReasonText($subscription);
     $body = $this->t("You are subscribed to receive updates on @reason_text.\r\nTo unsubscribe please visit @unsubscribe_url", $replacements);
 
+    // Rendering content.
+    $renderable = [
+      '#theme' => 'anonymous_subscriptions_message',
+      '#message' => $body,
+    ];
+    $htmlBody = \Drupal::service('renderer')->renderPlain($renderable);
+
     $this->sendMail([
       'to' => $subscription->email->value,
       'subject' => $subject,
-      'body' => (string) $body,
+      'body' => $htmlBody,
     ]);
   }
 
@@ -178,10 +185,17 @@ class DefaultService {
     $replacements['@reason_text'] = $this->getSubscriptionReasonText($subscription);
     $body = $this->t("You have requested subscription to get updates on @reason_text.\r\nTo confirm your subscription please visit the following url @confirm_url\r\nTo reject you subscription request use url @unsubscribe_url", $replacements);
 
+    // Rendering content.
+    $renderable = [
+      '#theme' => 'anonymous_subscriptions_message',
+      '#message' => $body,
+    ];
+    $htmlBody = \Drupal::service('renderer')->renderPlain($renderable);
+
     $this->sendMail([
       'to' => $subscription->email->value,
       'subject' => $subject,
-      'body' => (string) $body,
+      'body' => $htmlBody,
     ]);
   }
 
