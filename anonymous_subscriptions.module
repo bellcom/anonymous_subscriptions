@@ -140,6 +140,11 @@ function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form
     ];
 
     array_unshift($form['actions']['submit']['#submit'], 'anonymous_subscriptions_form_node_form_alter_submit');
+
+    $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+
+    // Reading a deleting the flag.
+    $sendEmail = $tempStore->get('send_mail:' . $node->getType() . ':new');
   }
 }
 
@@ -150,33 +155,58 @@ function anonymous_subscriptions_form_node_form_alter_submit(&$form, &$form_stat
   /** @var \Drupal\node\NodeInterface $node */
   $node = $form_state->getFormObject()->getEntity();
 
+  $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+  $id = $node->id() ?: 'new';
+
   if ($form_state->getValue('send_test_email')) {
     $test_emails = $form_state->getValue('send_test_email_emails');
     $emails = explode(',', $test_emails);
     if (!empty($emails)) {
-      \Drupal::service('anonymous_subscriptions.default')->sendTestEmail($node, $emails);
+      $tempStore->set('send_test_mail_emails:' . $node->getType() . ':' . $id, $emails);
     }
   }
-  else {
-    // Saving send email flag to temporary private storage.
-    $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
-    $id = $node->id() ?: 'new';
-    $tempStore->set('send_mail:' . $node->getType() . ':' . $id, $form_state->getValue('send_emails'));
-  }
+
+  // Saving send email flag to temporary private storage.
+  $tempStore->set('send_mail:' . $node->getType() . ':' . $id, $form_state->getValue('send_emails'));
 }
 
 /**
  * Implements hook_node_insert().
  */
-function anonymous_subscriptions_node_insert($node) {
+function anonymous_subscriptions_node_insert(\Drupal\node\NodeInterface $node) {
   $config = \Drupal::config(SettingsForm::$configName);
   $valid_types = $config->get('anonymous_subscriptions_node_types') ?: [];
   if (!empty($valid_types[$node->getType()])) {
-    // Resaving send_mail value for new nodes.
+    /** @var \Drupal\Core\TempStore\PrivateTempStore $tempStore */
     $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
-    $tempStore->set('send_mail:' . $node->getType() . ':' . $node->id(), 'send_mail:' . $node->getType() . ':new');
+
+    // Getting the flag for the test email.
+    $testEmails = $tempStore->get('send_test_mail_emails:' . $node->getType() . ':new');
+    if ($testEmails) {
+      \Drupal::service('anonymous_subscriptions.default')->sendTestEmail($node, $testEmails);
+      // Deleting the flag.
+      $tempStore->delete('send_test_mail_emails:' . $node->getType() . ':new');
+    }
+
+    // Getting the flag for the new node notification.
+    $sendEmail = $tempStore->get('send_mail:' . $node->getType() . ':new');
+
+    // Flag is present - we are dealing with node added via form.
+    if (isset($sendEmail)) {
+      // Checking the flag is TRUE.
+      if ($sendEmail) {
+        $tempStore->set('send_mail:' . $node->getType() . ':' . $node->id(), 'send_mail:' . $node->getType() . ':new');
+      }
+      // Deleting the flag.
+      $tempStore->delete('send_mail:' . $node->getType() . ':new');
+    }
+    // Flag is missing - we are dealing with automatic creation, force email to be sent.
+    else {
+      $tempStore->set('send_mail:' . $node->getType() . ':' . $node->id(), 'send_mail:' . $node->getType() . ':new');
+    }
+
+    \Drupal::service('anonymous_subscriptions.default')->addPendingEmails($node);
   }
-  \Drupal::service('anonymous_subscriptions.default')->addPendingEmails($node);
 }
 
 /**
