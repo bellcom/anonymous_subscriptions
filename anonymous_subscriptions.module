@@ -140,11 +140,6 @@ function anonymous_subscriptions_form_node_form_alter(&$form, $form_state, $form
     ];
 
     array_unshift($form['actions']['submit']['#submit'], 'anonymous_subscriptions_form_node_form_alter_submit');
-
-    $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
-
-    // Reading a deleting the flag.
-    $sendEmail = $tempStore->get('send_mail:' . $node->getType() . ':new');
   }
 }
 
@@ -213,6 +208,17 @@ function anonymous_subscriptions_node_insert(\Drupal\node\NodeInterface $node) {
  * Implements hook_node_update().
  */
 function anonymous_subscriptions_node_update($node) {
+  /** @var \Drupal\Core\TempStore\PrivateTempStore $tempStore */
+  $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+
+  // Getting the flag for the test email.
+  $testEmails = $tempStore->get('send_test_mail_emails:' . $node->getType() . ':' . $node->id());
+  if ($testEmails) {
+    \Drupal::service('anonymous_subscriptions.default')->sendTestEmail($node, $testEmails);
+    // Deleting the flag.
+    $tempStore->delete('send_test_mail_emails:' . $node->getType() . ':' . $node->id());
+  }
+
   \Drupal::service('anonymous_subscriptions.default')->addPendingEmails($node);
 }
 
