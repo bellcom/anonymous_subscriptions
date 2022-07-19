@@ -14,7 +14,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Core\Queue\QueueFactory;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Drupal\Core\TempStore\SharedTempStoreFactory;
 use Drupal\Core\Url;
 use Drupal\Core\Utility\Token;
 use Drupal\node\NodeInterface;
@@ -67,9 +67,9 @@ class DefaultService {
   protected $token;
 
   /**
-   * PrivateTempStoreFactory service.
+   * SharedTempStoreFactory service.
    *
-   * @var \Drupal\Core\TempStore\PrivateTempStoreFactory
+   * @var \Drupal\Core\TempStore\SharedTempStoreFactory
    */
   protected $tempStore;
 
@@ -114,7 +114,7 @@ class DefaultService {
    *   The logger service.
    * @param \Drupal\Core\Utility\Token $token
    *   The token service.
-   * @param \Drupal\Core\TempStore\PrivateTempStoreFactory $tempStore
+   * @param \Drupal\Core\TempStore\SharedTempStoreFactory $tempStore
    *   The logger service.
    * @param \Drupal\Core\Queue\QueueFactory $queueFactory
    *   The Queue factory service.
@@ -123,7 +123,7 @@ class DefaultService {
    * @param \Drupal\Core\Entity\EntityFieldManager $entityFieldManager
    *   The entity_field.manager service.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, MailManagerInterface $manager_mail, LanguageManagerInterface $languageManager, LoggerInterface $logger, Token $token, PrivateTempStoreFactory $tempStore, QueueFactory $queueFactory, EntityTypeManager $entityTypeManager, EntityFieldManager $entityFieldManager) {
+  public function __construct(ConfigFactoryInterface $config_factory, MailManagerInterface $manager_mail, LanguageManagerInterface $languageManager, LoggerInterface $logger, Token $token, SharedTempStoreFactory $tempStore, QueueFactory $queueFactory, EntityTypeManager $entityTypeManager, EntityFieldManager $entityFieldManager) {
     $this->configFactory = $config_factory;
     $this->settings = $config_factory->get(SettingsForm::$configName);
     $this->mailManager = $manager_mail;

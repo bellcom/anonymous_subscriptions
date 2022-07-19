@@ -150,7 +150,7 @@ function anonymous_subscriptions_form_node_form_alter_submit(&$form, &$form_stat
   /** @var \Drupal\node\NodeInterface $node */
   $node = $form_state->getFormObject()->getEntity();
 
-  $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+  $tempStore = \Drupal::service('tempstore.shared')->get('anonymous_subscriptions');
   $id = $node->id() ?: 'new';
 
   if ($form_state->getValue('send_test_email')) {
@@ -161,7 +161,7 @@ function anonymous_subscriptions_form_node_form_alter_submit(&$form, &$form_stat
     }
   }
 
-  // Saving send email flag to temporary private storage.
+  // Saving send email flag to temporary shared storage.
   $tempStore->set('send_mail:' . $node->getType() . ':' . $id, $form_state->getValue('send_emails'));
 }
 
@@ -172,8 +172,8 @@ function anonymous_subscriptions_node_insert(\Drupal\node\NodeInterface $node) {
   $config = \Drupal::config(SettingsForm::$configName);
   $valid_types = $config->get('anonymous_subscriptions_node_types') ?: [];
   if (!empty($valid_types[$node->getType()])) {
-    /** @var \Drupal\Core\TempStore\PrivateTempStore $tempStore */
-    $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+    /** @var \Drupal\Core\TempStore\SharedTempStore $tempStore */
+    $tempStore = \Drupal::service('tempstore.shared')->get('anonymous_subscriptions');
 
     // Getting the flag for the test email.
     $testEmails = $tempStore->get('send_test_mail_emails:' . $node->getType() . ':new');
@@ -208,8 +208,8 @@ function anonymous_subscriptions_node_insert(\Drupal\node\NodeInterface $node) {
  * Implements hook_node_update().
  */
 function anonymous_subscriptions_node_update($node) {
-  /** @var \Drupal\Core\TempStore\PrivateTempStore $tempStore */
-  $tempStore = \Drupal::service('tempstore.private')->get('anonymous_subscriptions');
+  /** @var \Drupal\Core\TempStore\SharedTempStore $tempStore */
+  $tempStore = \Drupal::service('tempstore.shared')->get('anonymous_subscriptions');
 
   // Getting the flag for the test email.
   $testEmails = $tempStore->get('send_test_mail_emails:' . $node->getType() . ':' . $node->id());
