@@ -52,7 +52,7 @@ class SubscriptionController extends ControllerBase {
    */
   public function verify(Subscription $subscription, $code) {
     if ($subscription->verified->value == 1) {
-      $status = $this->t('Your subscritpion already verified');
+      $status = $this->t('Your subscription is already verified');
     }
     elseif (strcmp($subscription->code->value, $code) === 0) {
       $subscription->set('verified', TRUE);
@@ -63,13 +63,12 @@ class SubscriptionController extends ControllerBase {
     else {
       $status = $this->t('We could not confirm your subscription');
     }
-    return [
-      '#theme' => 'anonymous_subscriptions_message',
-      '#attributes' => ['class' => ['text']],
-      '#message' => $status,
-      '#subscription' => $subscription,
-      '#link' => Link::fromTextAndUrl($this->t('Click here to return to homepage'), Url::fromRoute('<front>')),
+
+    $build = [
+      '#markup' => '<h2>' . $status . '</h2>' . Link::fromTextAndUrl($this->t('Click here to return to homepage'), Url::fromRoute('<front>'))->toString(),
     ];
+
+    return $build;
   }
 
 }
