@@ -308,6 +308,22 @@ class DefaultService {
 
     $queue = $this->queueFactory->get('anonymous_subscriptions_queue');
 
+    // Check if we have any overrides.
+    $type = $node->getType();
+
+    $original_subject = $this->settings->get('anonymous_subscriptions_subject_text');
+    $original_body = $this->settings->get('anonymous_subscriptions_body_text');
+
+    if ($this->settings->get("anonymous_subscriptions_subject_text_$type")) {
+      $original_subject = $this->settings->get("anonymous_subscriptions_subject_text_$type");
+    }
+    if ($this->settings->get("anonymous_subscriptions_body_text_$type")) {
+      $original_body = $this->settings->get("anonymous_subscriptions_body_text_$type");
+    }
+    // Making email replacements.
+    $subject = $this->token->replace($original_subject, ['node' => $node]);
+    $body = $this->token->replace($original_body, ['node' => $node]);
+
     // Setting front-end theme.
     /** @var \Drupal\Core\Theme\ThemeInitialization $theme_initialization */
     $theme_initialization = \Drupal::service('theme.initialization');
@@ -320,7 +336,7 @@ class DefaultService {
     /** @var \Drupal\anonymous_subscriptions\Entity\Subscription $subscription */
     foreach ($subscriptions as $subscription) {
       $to = $subscription->email->value;
-      $emailItem = $this->buildEmailItem($node, $to, $subscription);
+      $emailItem = $this->buildEmailItem($subject, $body, $node, $to, $subscription);
       $queue->createItem($emailItem);
 
       $log_text = t("Adding pending email to :to with subject :subject for nid :nid", [
@@ -362,6 +378,22 @@ class DefaultService {
    * @throws \Drupal\Core\Theme\MissingThemeDependencyException
    */
   public function sendTestEmail(NodeInterface $node, $emails) {
+    // Check if we have any overrides.
+    $type = $node->getType();
+
+    $original_subject = $this->settings->get('anonymous_subscriptions_subject_text');
+    $original_body = $this->settings->get('anonymous_subscriptions_body_text');
+
+    if ($this->settings->get("anonymous_subscriptions_subject_text_$type")) {
+      $original_subject = $this->settings->get("anonymous_subscriptions_subject_text_$type");
+    }
+    if ($this->settings->get("anonymous_subscriptions_body_text_$type")) {
+      $original_body = $this->settings->get("anonymous_subscriptions_body_text_$type");
+    }
+    // Making email replacements.
+    $subject = $this->token->replace($original_subject, ['node' => $node]);
+    $body = $this->token->replace($original_body, ['node' => $node]);
+
     // Setting front-end theme.
     /** @var \Drupal\Core\Theme\ThemeInitialization $theme_initialization */
     $theme_initialization = \Drupal::service('theme.initialization');
@@ -372,7 +404,7 @@ class DefaultService {
 
     $count = 0;
     foreach ($emails as $email) {
-      $emailItem = $this->buildEmailItem($node, $email);
+      $emailItem = $this->buildEmailItem($subject, $body, $node, $email);
       // Adding mark that is a TEST email.
       $emailItem['subject'] = '[TEST] ' . $emailItem['subject'];
       $this->sendMail($emailItem);
@@ -411,32 +443,7 @@ class DefaultService {
    *
    * @throws \Drupal\Core\Theme\MissingThemeDependencyException
    */
-  private function buildEmailItem(NodeInterface $subjectNode, $email, Subscription $subscription = NULL) {
-    $original_subject = $this->settings->get('anonymous_subscriptions_subject_text');
-    $original_body = $this->settings->get('anonymous_subscriptions_body_text');
-
-    // Check if we have any overrides.
-    $type = $subjectNode->getType();
-
-    if ($this->settings->get("anonymous_subscriptions_subject_text_$type")) {
-      $original_subject = $this->settings->get("anonymous_subscriptions_subject_text_$type");
-    }
-    if ($this->settings->get("anonymous_subscriptions_body_text_$type")) {
-      $original_body = $this->settings->get("anonymous_subscriptions_body_text_$type");
-    }
-
-    // Making replacements.
-    $subject = $this->token->replace($original_subject, ['node' => $subjectNode]);
-    $body = $this->token->replace($original_body, ['node' => $subjectNode]);
-
-    // Setting front-end theme.
-    /** @var \Drupal\Core\Theme\ThemeInitialization $theme_initialization */
-    $theme_initialization = \Drupal::service('theme.initialization');
-    $active_theme = \Drupal::theme()->getActiveTheme();
-    $config = \Drupal::config('system.theme');
-    $defaultTheme =  $config->get('default');
-    \Drupal::theme()->setActiveTheme($theme_initialization->getActiveThemeByName($defaultTheme));
-
+  private function buildEmailItem($subject, $body, NodeInterface $subjectNode, $email, Subscription $subscription = NULL) {
     // Rendering content.
     $renderable = [
       '#theme' => 'anonymous_subscriptions_notification_email',
