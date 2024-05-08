@@ -16,6 +16,7 @@ class SubscriptionCancelAllForm extends SubscriptionCancelForm {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $query = \Drupal::entityQuery('anonymous_subscription')
+	->accessCheck(false)
       ->condition('email', $this->subscription->email->value);
     $ids = $query->execute();
 

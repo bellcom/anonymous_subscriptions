@@ -251,7 +251,7 @@ class DefaultService {
       return;
     }
 
-    $query = \Drupal::entityQuery('anonymous_subscription');
+    $query = \Drupal::entityQuery('anonymous_subscription')->accessCheck(false);
     $query->condition('verified', 1)
       ->condition('entity_type', 'node');
     $group = $query->orConditionGroup()

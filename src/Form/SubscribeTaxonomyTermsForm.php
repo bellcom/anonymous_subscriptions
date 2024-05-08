@@ -118,6 +118,7 @@ class SubscribeTaxonomyTermsForm extends SubscribeFormBase {
     $tids = array_filter($form_state->getValue('terms'));
 
     $query = \Drupal::entityQuery('anonymous_subscription')
+      ->accessCheck(false)
       ->condition('email', $email)
       ->condition('entity_type', 'taxonomy_term')
       ->condition('entity_bundle', $vid)

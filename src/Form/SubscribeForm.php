@@ -98,7 +98,7 @@ class SubscribeForm extends SubscribeFormBase {
     $email = $form_state->getValue('email');
     $type = $form_state->getValue('type');
 
-    $query = \Drupal::entityQuery('anonymous_subscription')
+    $query = \Drupal::entityQuery('anonymous_subscription')->accessCheck(false)
       ->condition('email', $email)
       ->condition('entity_type', 'node');
     if (empty($type)) {
