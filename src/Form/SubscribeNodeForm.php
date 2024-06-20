@@ -203,6 +203,7 @@ class SubscribeNodeForm extends SubscribeFormBase {
     $nid = $form_state->getValue('nid');
     $node = Node::load($nid);
     $ids = \Drupal::entityQuery('anonymous_subscription')
+      ->accessCheck(false)
       ->condition('email', $email)
       ->condition('entity_type', 'node')
       ->condition('entity_bundle', $node->getType())
@@ -280,6 +281,7 @@ class SubscribeNodeForm extends SubscribeFormBase {
     // Creating subscriptions for taxonomy term references.
     $tids = array_filter($form_state->getValue('terms'));
     $ids = empty($tids) ? [] : \Drupal::entityQuery('anonymous_subscription')
+      ->accessCheck(false)
       ->condition('email', $email)
       ->condition('entity_type', 'taxonomy_term')
       ->condition('entity_id', $tids, 'IN')

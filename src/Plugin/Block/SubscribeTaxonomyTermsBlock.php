@@ -55,7 +55,7 @@ class SubscribeTaxonomyTermsBlock extends SubscribeBlockBase {
    * {@inheritdoc}
    */
   public function blockForm($form, FormStateInterface $form_state) {
-    $vids = \Drupal::entityQuery('taxonomy_vocabulary')->execute();
+    $vids = \Drupal::entityQuery('taxonomy_vocabulary')->accessCheck(false)->execute();
     foreach ($vids as $vid => &$label) {
       if ($this->subscriptionService->isVocabularyAllowed($vid)) {
         $label = Vocabulary::load($vid)->label();

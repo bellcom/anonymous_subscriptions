@@ -297,7 +297,7 @@ class DefaultService {
 
     // Fetching subscriptions and merging them  with existing subscriptions.
     if (!empty($tids)) {
-      $query = \Drupal::entityQuery('anonymous_subscription');
+      $query = \Drupal::entityQuery('anonymous_subscription')->accessCheck(false);
       $query->condition('verified', 1)
         ->condition('entity_type', 'taxonomy_term')
         ->condition('entity_id', $tids, 'IN');
