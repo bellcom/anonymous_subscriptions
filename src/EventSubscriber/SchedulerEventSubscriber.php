@@ -3,7 +3,7 @@
 namespace Drupal\anonymous_subscriptions\EventSubscriber;
 
 use Drupal\anonymous_subscriptions\DefaultService;
-use Drupal\scheduler\SchedulerEvent;
+use Drupal\scheduler\Event\SchedulerEvent;
 use Drupal\scheduler\SchedulerEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -34,7 +34,7 @@ class SchedulerEventSubscriber implements EventSubscriberInterface {
    *
    * This is during the edit process, not via cron.
    *
-   * @param \Drupal\scheduler\SchedulerEvent $event
+   * @param \Drupal\scheduler\Event\SchedulerEvent $event
    *   The event being acted on.
    */
   public function publish(SchedulerEvent $event) {
