@@ -80,10 +80,8 @@ class SubscribeForm extends SubscribeFormBase {
       '#value' => $this->t('Subscribe'),
     ];
 
-    $form['type'] = [
-      '#type' => 'hidden',
-      '#default_value' => $type,
-    ];
+    // Storing type.
+    $form_state->set('type', $type);
 
     $form['#tree'] = TRUE;
     return $form;
@@ -96,7 +94,7 @@ class SubscribeForm extends SubscribeFormBase {
     parent::validateForm($form, $form_state);
 
     $email = $form_state->getValue('email');
-    $type = $form_state->getValue('type');
+    $type = $form_state->get('type');
 
     $query = \Drupal::entityQuery('anonymous_subscription')->accessCheck(false)
       ->condition('email', $email)
@@ -120,7 +118,7 @@ class SubscribeForm extends SubscribeFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $email = $form_state->getValue('email');
-    $type = $form_state->getValue('type');
+    $type = $form_state->get('type');
     $verification_required = $this->settings->get('anonymous_subscriptions_verify');
 
     /** @var \Drupal\anonymous_subscriptions\Entity\Subscription $subscription */

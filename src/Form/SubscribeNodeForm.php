@@ -116,10 +116,8 @@ class SubscribeNodeForm extends SubscribeFormBase {
       ]),
     ];
 
-    $form['nid'] = [
-      '#type' => 'hidden',
-      '#default_value' => $node->id(),
-    ];
+    // Storing Nid.
+    $form_state->set('type', $node->id());
 
     $form['submit'] = [
       '#type' => 'submit',
@@ -200,7 +198,7 @@ class SubscribeNodeForm extends SubscribeFormBase {
     $email = $form_state->getValue('email');
     $type = $form_state->getValue('node_type');
     $page = $form_state->getValue('page');
-    $nid = $form_state->getValue('nid');
+    $nid = $form_state->get('nid');
     $node = Node::load($nid);
     $ids = \Drupal::entityQuery('anonymous_subscription')
       ->accessCheck(false)
@@ -231,7 +229,7 @@ class SubscribeNodeForm extends SubscribeFormBase {
     $node_type = $form_state->getValue('node_type');
     $page = $form_state->getValue('page');
     /** @var \Drupal\node\NodeInterface $node */
-    $node = Node::load($form_state->getValue('nid'));
+    $nid = $form_state->get('nid');
     $verification_required = $this->settings->get('anonymous_subscriptions_verify');
     $new_subscriptions = FALSE;
 

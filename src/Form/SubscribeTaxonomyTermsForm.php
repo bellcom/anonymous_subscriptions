@@ -47,10 +47,8 @@ class SubscribeTaxonomyTermsForm extends SubscribeFormBase {
       '#required' => TRUE,
     ];
 
-    $form['vid'] = [
-      '#type' => 'hidden',
-      '#default_value' => $vid,
-    ];
+    // Storing vid.
+    $form_state->set('vid', $vid);
 
     $form['subscription_terms_container'] = [
       '#type' => 'container',
@@ -114,7 +112,7 @@ class SubscribeTaxonomyTermsForm extends SubscribeFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $email = $form_state->getValue('email');
-    $vid = $form_state->getValue('vid');
+    $vid = $form_state->get('vid');
     $tids = array_filter($form_state->getValue('terms'));
 
     $query = \Drupal::entityQuery('anonymous_subscription')
