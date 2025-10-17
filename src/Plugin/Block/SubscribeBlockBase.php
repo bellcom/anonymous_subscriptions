@@ -22,7 +22,7 @@ abstract class SubscribeBlockBase extends BlockBase implements ContainerFactoryP
   /**
    * The form builder service.
    *
-   * @var \Drupal\Core\Config\ImmutableConfig
+   * @var \Drupal\Core\Form\FormBuilderInterface
    */
   protected $formBuilder;
 

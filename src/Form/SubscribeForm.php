@@ -13,10 +13,31 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class SubscribeForm extends SubscribeFormBase {
 
   /**
+   * Custom form ID.
+   *
+   * @var string
+   */
+  private string $formId;
+
+  /**
+   * Setting form ID.
+   *
+   * @param string $formId
+   * @return void
+   */
+  public function setFormId(string $formId) {
+    $this->formId = $formId;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'anonymous_subscriptions_subscribe_form';
+    if (empty($this->formId)) {
+      $this->formId = 'anonymous_subscriptions_subscribe_form';
+    }
+
+    return $this->formId;
   }
 
   /**

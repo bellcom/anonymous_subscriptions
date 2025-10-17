@@ -2,6 +2,7 @@
 
 namespace Drupal\anonymous_subscriptions\Plugin\Block;
 
+use Drupal\anonymous_subscriptions\Form\SubscribeForm;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
@@ -60,7 +61,16 @@ class SubscribeBlock extends SubscribeBlockBase {
     $build = [];
     $build['#theme'] = 'subscribe_block';
     $type = empty($this->configuration['node_type']) ? NULL : $this->configuration['node_type'];
-    $form = $this->formBuilder->getForm('\Drupal\anonymous_subscriptions\Form\SubscribeForm', $type);
+
+    $form = new SubscribeForm(
+      \Drupal::service('config.factory'),
+      \Drupal::service('anonymous_subscriptions.default'),
+      \Drupal::service('entity_type.manager'),
+      \Drupal::service('flood')
+    );
+    $form->setFormId('anonymous_subscriptions_subscribe_form-' . $type);
+
+    $form = $this->formBuilder->getForm($form, $type);
     $build['form'][] = $form;
 
     return $build;
