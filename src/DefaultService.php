@@ -337,6 +337,7 @@ class DefaultService {
     foreach ($subscriptions as $subscription) {
       $to = $subscription->email->value;
       $emailItem = $this->buildEmailItem($subject, $body, $node, $to, $subscription);
+      $emailItem['nid'] = $node->id();
       $queue->createItem($emailItem);
 
       $log_text = t("Adding pending email to :to with subject :subject for nid :nid", [
@@ -590,6 +591,17 @@ class DefaultService {
     }
 
     return $reason_text;
+  }
+
+  public function setEmailSent($data) {
+    // Preventing multiple emails sending.
+    $this->tempStore->set('anonymous_subscriptions_mail_delivered:' . $data['to'] . ':' . $data['nid'], TRUE);
+  }
+
+  public function checkEmailSent($data) {
+    if ($this->tempStore->get('anonymous_subscriptions_mail_delivered:' . $data['to'] . ':' . $data['nid'])) {
+      return TRUE;
+    }
   }
 
 }

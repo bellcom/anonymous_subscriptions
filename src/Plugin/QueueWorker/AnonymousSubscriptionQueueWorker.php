@@ -75,7 +75,13 @@ class AnonymousSubscriptionQueueWorker extends QueueWorkerBase implements Contai
 
     // Run is now is scheduled hours, or if now is after scheduled hours, but the last check was more than 1h ago.
     if ($scheduledHour == -1 || $hourNow == $scheduledHour || ($hourNow > $scheduledHour && time() - $lastCheck > 3600)) {
-      $this->subscriptionService->sendMail($data);
+      if ($this->subscriptionService->checkEmailSent($data)) {
+        return TRUE;
+      }
+
+      if ($this->subscriptionService->sendMail($data)) {
+        $this->subscriptionService->setEmailSent($data);
+      }
     }
     else {
       \Drupal::state()->set('anonymous_subscriptions.last_check', \Drupal::time()->getRequestTime());
