@@ -29,7 +29,33 @@ function anonymous_subscriptions_help($route_name) {
 
       return $output;
   }
+}
 
+/**
+ * Implements hook_cron().
+ */
+function anonymous_subscriptions_cron() {
+  // 30 days ago.
+  $expiration_time = \Drupal::time()->getRequestTime() - (30 * 24 * 60 * 60);
+
+  $subscription_ids = \Drupal::entityQuery('anonymous_subscription')
+    ->accessCheck(FALSE)
+    ->condition('verified', FALSE)
+    ->condition('created', $expiration_time, '<')
+    ->execute();
+
+  if (empty($subscription_ids)) {
+    return;
+  }
+
+  /** @var \Drupal\Core\Entity\EntityStorageInterface $storage */
+  $storage = \Drupal::entityTypeManager()->getStorage('anonymous_subscription');
+  /** @var \Drupal\anonymous_subscriptions\Entity\Subscription[] $subscriptions */
+  $subscriptions = $storage->loadMultiple($subscription_ids);
+
+  foreach ($subscriptions as $subscription) {
+    $subscription->delete();
+  }
 }
 
 /**
@@ -348,4 +374,3 @@ function anonymous_subscriptions_form_taxonomy_term_form_alter_submit(&$form, &$
     }
   }
 }
-
