@@ -37,7 +37,7 @@ class SettingsForm extends ConfigFormBase {
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
    *   The module handler.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, protected $typedConfigManager, ModuleHandlerInterface $moduleHandler) {
+  public function __construct(ConfigFactoryInterface $config_factory, protected TypedConfigManagerInterface $typedConfigManager, ModuleHandlerInterface $moduleHandler) {
     parent::__construct($config_factory, $typedConfigManager);
     $this->moduleHandler = $moduleHandler;
   }
